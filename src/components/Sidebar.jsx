@@ -1,120 +1,36 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 
 const NAV_ITEMS = [
-  {
-    id: 'dashboard',
-    label: 'Dashboard',
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
-        <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
-      </svg>
-    ),
-  },
-  {
-    id: 'clients',
-    label: 'Clients',
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-        <circle cx="9" cy="7" r="4"/>
-        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-      </svg>
-    ),
-  },
-  {
-    id: 'social',
-    label: 'Social Media',
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
-        <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
-      </svg>
-    ),
-  },
-  {
-    id: 'operations',
-    label: 'Growth & Retention',
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-      </svg>
-    ),
-  },
-  {
-    id: 'research',
-    label: 'Research',
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-      </svg>
-    ),
-  },
-  {
-    id: 'va-support',
-    label: 'VA Support',
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M3 18v-6a9 9 0 0 1 18 0v6"/>
-        <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>
-      </svg>
-    ),
-  },
-  {
-    id: 'websites',
-    label: 'Website Projects',
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="10"/>
-        <line x1="2" y1="12" x2="22" y2="12"/>
-        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-      </svg>
-    ),
-  },
-  {
-    id: 'reports',
-    label: 'Reports',
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/>
-        <line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/>
-      </svg>
-    ),
-  },
-  {
-    id: 'messages',
-    label: 'Messages',
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-      </svg>
-    ),
-  },
-  {
-    id: 'alerts',
-    label: 'Alerts',
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-        <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-      </svg>
-    ),
-  },
-  {
-    id: 'settings',
-    label: 'Settings',
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="3"/>
-        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-      </svg>
-    ),
-  },
+  { id: 'dashboard', label: 'Dashboard', emoji: '🏠' },
+  { id: 'clients', label: 'Clients', emoji: '👥' },
+  { id: 'social', label: 'Social Media', emoji: '📱' },
+  { id: 'operations', label: 'Operations', emoji: '⚡' },
+  { id: 'reports', label: 'Reports', emoji: '📊' },
+  { id: 'messages', label: 'Messages', emoji: '💬' },
+  { id: 'alerts', label: 'Alerts', emoji: '🔔' },
+  { id: 'settings', label: 'Settings', emoji: '⚙️' },
+]
+
+const PU = '#C4874A'
+const OR = '#C4874A'
+const PL = 'rgba(196,135,74,0.15)'
+const PH = 'rgba(255,255,255,0.06)'
+
+const QUOTES = [
+  'Consistency beats perfection every time.',
+  'Create content that helps people, not just content.',
+  'Small actions compound into big results.',
+  'Show up, create, repeat.',
+  'Your story is your strategy.',
+  'Done is better than perfect.',
+  'Progress over perfection.',
 ]
 
 export default function Sidebar({ activePage, onNavigate, collapsed, onToggleCollapse, mobileOpen, onCloseMobile, alertBadge, messageBadge }) {
   const { user, logout } = useAuth()
+  const [hoveredId, setHoveredId] = useState(null)
+  const quote = QUOTES[new Date().getDate() % QUOTES.length]
 
   const handleNav = (id) => {
     onNavigate(id)
@@ -123,108 +39,115 @@ export default function Sidebar({ activePage, onNavigate, collapsed, onToggleCol
 
   return (
     <>
-      {mobileOpen && (
-        <div style={styles.overlay} onClick={onCloseMobile} />
-      )}
-
+      {mobileOpen && <div style={s.overlay} onClick={onCloseMobile} />}
       <aside
         style={{
-          ...styles.sidebar,
+          ...s.sidebar,
           width: collapsed ? 'var(--sidebar-collapsed)' : 'var(--sidebar-width)',
           transform: mobileOpen ? 'translateX(0)' : undefined,
         }}
-        className={`sidebar${mobileOpen ? ' sidebar--mobile-open' : ''}`}
+        className={mobileOpen ? 'sidebar--mobile-open' : ''}
       >
         {/* Brand */}
-        <div style={{ ...styles.brand, justifyContent: collapsed ? 'center' : 'space-between' }}>
-          <div style={styles.brandInner}>
-            <div style={styles.logoMark}>P</div>
-            {!collapsed && (
-              <div style={styles.brandText}>
-                <span style={styles.brandName}>Pulse</span>
-                <span style={styles.brandSub}>Agency</span>
-              </div>
-            )}
-          </div>
+        <div style={{ ...s.brand, justifyContent: collapsed ? 'center' : 'space-between' }}>
+          {!collapsed ? (
+            <div style={s.brandInner}>
+              <span style={s.brandName}>Pulse</span>
+              <span style={s.brandDot}>.</span>
+            </div>
+          ) : (
+            <div style={s.logoMark}>P</div>
+          )}
           <button
-            style={{ ...styles.collapseBtn, marginLeft: collapsed ? 0 : undefined }}
+            style={{ ...s.collapseBtn, marginLeft: collapsed ? 0 : undefined }}
             onClick={onToggleCollapse}
             title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-              {collapsed ? (
-                <polyline points="9 18 15 12 9 6"/>
-              ) : (
-                <polyline points="15 18 9 12 15 6"/>
-              )}
+              {collapsed ? <polyline points="9 18 15 12 9 6" /> : <polyline points="15 18 9 12 15 6" />}
             </svg>
           </button>
         </div>
 
         {/* Nav */}
-        <nav style={styles.nav}>
+        <nav style={s.nav}>
           {NAV_ITEMS.map(item => {
             const isActive = activePage === item.id
+            const isHovered = hoveredId === item.id && !isActive
             const badge = item.id === 'alerts' ? (alertBadge || 0) : item.id === 'messages' ? (messageBadge || 0) : 0
             return (
               <button
                 key={item.id}
                 onClick={() => handleNav(item.id)}
+                onMouseEnter={() => setHoveredId(item.id)}
+                onMouseLeave={() => setHoveredId(null)}
                 title={collapsed ? item.label : undefined}
                 style={{
-                  ...styles.navItem,
-                  ...(isActive ? styles.navItemActive : {}),
+                  ...s.navItem,
+                  background: isActive ? PL : isHovered ? PH : 'transparent',
+                  color: isActive ? '#fff' : 'rgba(255,255,255,0.6)',
+                  borderLeft: `3px solid ${isActive ? PU : 'transparent'}`,
                   justifyContent: collapsed ? 'center' : 'flex-start',
-                  padding: collapsed ? '10px 0' : '10px 14px',
+                  padding: collapsed ? '10px 0' : '10px 12px',
                 }}
               >
-                <span style={{ ...styles.navIcon, color: isActive ? 'var(--accent)' : 'rgba(255,255,255,0.45)' }}>
-                  {item.icon}
-                </span>
+                <span style={{ fontSize: 17, lineHeight: 1, flexShrink: 0 }}>{item.emoji}</span>
                 {!collapsed && (
                   <>
-                    <span style={{ ...styles.navLabel, color: isActive ? '#fff' : 'rgba(255,255,255,0.65)' }}>{item.label}</span>
-                    {badge > 0 && (
-                      <span style={styles.badge}>{badge}</span>
-                    )}
+                    <span style={{ ...s.navLabel, color: isActive ? '#fff' : 'rgba(255,255,255,0.6)', fontWeight: isActive ? 700 : 500 }}>
+                      {item.label}
+                    </span>
+                    {badge > 0 && <span style={s.badge}>{badge}</span>}
                   </>
                 )}
-                {collapsed && badge > 0 && (
-                  <span style={styles.badgeDot} />
-                )}
+                {collapsed && badge > 0 && <span style={s.badgeDot} />}
               </button>
             )
           })}
         </nav>
 
-        {/* User */}
-        <div style={{ ...styles.userArea, padding: collapsed ? '16px 0' : '16px' }}>
-          {!collapsed && <div style={styles.userDivider} />}
-          <div style={{ ...styles.userInner, justifyContent: collapsed ? 'center' : 'flex-start' }}>
-            <div style={styles.avatar}>{user?.initials || 'U'}</div>
+        {/* Quote card */}
+        {!collapsed && (
+          <div style={s.quoteCard}>
+            <div style={s.quoteIllus}>
+              <svg width="52" height="38" viewBox="0 0 52 38" fill="none">
+                <circle cx="26" cy="19" r="13" fill={PU} opacity="0.1" />
+                <circle cx="44" cy="8" r="7" fill={OR} opacity="0.13" />
+                <circle cx="8" cy="30" r="5" fill="#F5C542" opacity="0.18" />
+                <rect x="18" y="13" width="16" height="10" rx="3" fill={PU} opacity="0.08" />
+              </svg>
+            </div>
+            <p style={s.quoteText}>"{quote}"</p>
+          </div>
+        )}
+
+        {/* User profile */}
+        <div style={{ ...s.userArea, padding: collapsed ? '14px 0' : '12px 14px' }}>
+          {!collapsed && <div style={s.userDivider} />}
+          <div style={{ ...s.userInner, justifyContent: collapsed ? 'center' : 'flex-start' }}>
+            <div style={s.avatar}>{user?.initials || 'SK'}</div>
             {!collapsed && (
-              <div style={styles.userInfo}>
-                <span style={styles.userName}>{user?.name}</span>
-                <span style={styles.userRole}>{user?.role === 'admin' ? 'Agency Admin' : 'Client'}</span>
-              </div>
+              <>
+                <div style={s.userInfo}>
+                  <span style={s.userName}>{user?.name || 'Sonia Khan'}</span>
+                  <span style={s.userRole}>Content Creator</span>
+                </div>
+                <button onClick={logout} style={s.signOutBtn} title="Sign out">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line x1="21" y1="12" x2="9" y2="12" />
+                  </svg>
+                </button>
+              </>
             )}
           </div>
-          {!collapsed && (
-            <button onClick={logout} style={styles.logoutBtn}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                <polyline points="16 17 21 12 16 7"/>
-                <line x1="21" y1="12" x2="9" y2="12"/>
-              </svg>
-              Sign out
-            </button>
-          )}
           {collapsed && (
-            <button onClick={logout} style={{ ...styles.logoutBtn, justifyContent: 'center', padding: '6px 0', marginTop: '8px', width: '100%' }} title="Sign out">
+            <button onClick={logout} style={{ ...s.signOutBtn, marginTop: 10, display: 'flex', justifyContent: 'center', width: '100%' }} title="Sign out">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                <polyline points="16 17 21 12 16 7"/>
-                <line x1="21" y1="12" x2="9" y2="12"/>
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <polyline points="16 17 21 12 16 7" />
+                <line x1="21" y1="12" x2="9" y2="12" />
               </svg>
             </button>
           )}
@@ -234,206 +157,108 @@ export default function Sidebar({ activePage, onNavigate, collapsed, onToggleCol
   )
 }
 
-const styles = {
+const s = {
   overlay: {
-    position: 'fixed',
-    inset: 0,
-    background: 'rgba(26,26,26,0.55)',
-    zIndex: 49,
+    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 49,
   },
   sidebar: {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    height: '100vh',
-    background: '#1A1A1A',
-    borderRight: '1px solid rgba(255,255,255,0.06)',
-    display: 'flex',
-    flexDirection: 'column',
+    position: 'fixed', top: 0, left: 0, height: '100vh',
+    background: '#0D0C0C',
+    borderRight: '1px solid rgba(255,255,255,0.08)',
+    display: 'flex', flexDirection: 'column',
     transition: 'width var(--transition)',
-    zIndex: 50,
-    overflow: 'hidden',
+    zIndex: 50, overflow: 'hidden',
+    boxShadow: '2px 0 20px rgba(0,0,0,0.4)',
   },
   brand: {
-    display: 'flex',
-    alignItems: 'center',
-    padding: '18px 14px 16px',
-    borderBottom: '1px solid rgba(255,255,255,0.06)',
-    minHeight: '64px',
-    flexShrink: 0,
+    display: 'flex', alignItems: 'center',
+    padding: '18px 16px 16px',
+    borderBottom: '1px solid rgba(255,255,255,0.08)',
+    minHeight: 64, flexShrink: 0,
   },
-  brandInner: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    overflow: 'hidden',
+  brandInner: { display: 'flex', alignItems: 'center', gap: 1 },
+  brandName: {
+    fontFamily: "'Outfit', sans-serif",
+    fontSize: 22, fontWeight: 800, color: '#FFFFFF', lineHeight: 1,
+  },
+  brandDot: {
+    fontFamily: "'Outfit', sans-serif",
+    fontSize: 26, fontWeight: 900, color: OR, lineHeight: 1, marginLeft: 1,
   },
   logoMark: {
-    width: '32px',
-    height: '32px',
-    borderRadius: '8px',
-    background: 'var(--accent)',
-    color: '#fff',
-    fontFamily: "'Libre Baskerville', serif",
-    fontSize: '17px',
-    fontWeight: 700,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  brandText: {
-    display: 'flex',
-    flexDirection: 'column',
-    lineHeight: 1.1,
-    whiteSpace: 'nowrap',
-  },
-  brandName: {
-    fontFamily: "'Libre Baskerville', serif",
-    fontSize: '16px',
-    fontWeight: 700,
-    color: '#fff',
-  },
-  brandSub: {
-    fontSize: '11px',
-    color: 'rgba(255,255,255,0.4)',
+    width: 34, height: 34, borderRadius: 10,
+    background: PU, color: '#fff',
     fontFamily: "'Outfit', sans-serif",
-    letterSpacing: '0.08em',
-    textTransform: 'uppercase',
-    marginTop: '1px',
+    fontSize: 16, fontWeight: 800,
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    flexShrink: 0,
   },
   collapseBtn: {
-    background: 'rgba(255,255,255,0.06)',
-    border: '1px solid rgba(255,255,255,0.1)',
-    borderRadius: '5px',
-    width: '26px',
-    height: '26px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    color: 'rgba(255,255,255,0.4)',
-    cursor: 'pointer',
-    flexShrink: 0,
-    transition: 'background var(--transition)',
+    background: PH, border: `1px solid rgba(255,255,255,0.08)`,
+    borderRadius: 7, width: 26, height: 26,
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    color: PU, cursor: 'pointer', flexShrink: 0,
   },
   nav: {
-    flex: 1,
-    overflowY: 'auto',
-    overflowX: 'hidden',
+    flex: 1, overflowY: 'auto', overflowX: 'hidden',
     padding: '10px 8px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '2px',
+    display: 'flex', flexDirection: 'column', gap: 2,
   },
   navItem: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    background: 'none',
-    border: 'none',
-    borderRadius: '8px',
-    width: '100%',
-    cursor: 'pointer',
-    transition: 'background var(--transition)',
-    position: 'relative',
-    overflow: 'hidden',
-    whiteSpace: 'nowrap',
+    display: 'flex', alignItems: 'center', gap: 10,
+    border: 'none', borderRadius: 10, width: '100%',
+    cursor: 'pointer', transition: 'background 0.12s',
+    position: 'relative', overflow: 'hidden', whiteSpace: 'nowrap',
+    fontFamily: "'Outfit', sans-serif",
   },
-  navItemActive: {
-    background: 'rgba(196, 135, 74, 0.18)',
-  },
-  navIcon: {
-    flexShrink: 0,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '20px',
-  },
-  navLabel: {
-    fontSize: '13.5px',
-    fontWeight: 500,
-    flex: 1,
-    textAlign: 'left',
-  },
+  navLabel: { fontSize: 14, flex: 1, textAlign: 'left', fontFamily: "'Outfit', sans-serif" },
   badge: {
-    background: 'var(--red)',
-    color: '#fff',
-    fontSize: '10px',
-    fontWeight: 700,
-    padding: '2px 6px',
-    borderRadius: '10px',
-    minWidth: '18px',
-    textAlign: 'center',
+    background: '#C4503A', color: '#fff', fontSize: 10, fontWeight: 700,
+    padding: '2px 6px', borderRadius: 10, minWidth: 18, textAlign: 'center',
   },
   badgeDot: {
-    position: 'absolute',
-    top: '8px',
-    right: '8px',
-    width: '7px',
-    height: '7px',
-    background: 'var(--red)',
-    borderRadius: '50%',
+    position: 'absolute', top: 8, right: 8,
+    width: 7, height: 7, background: '#C4503A', borderRadius: '50%',
+  },
+  quoteCard: {
+    margin: '8px 10px 6px', padding: '14px 14px',
+    background: '#161514',
+    borderRadius: 12, border: `1px solid rgba(255,255,255,0.08)`,
+    flexShrink: 0, position: 'relative', overflow: 'hidden',
+  },
+  quoteIllus: { position: 'absolute', bottom: 4, right: 4, opacity: 0.4 },
+  quoteText: {
+    margin: 0, fontSize: 11.5, lineHeight: 1.6,
+    color: 'rgba(255,255,255,0.6)', fontWeight: 500,
+    fontFamily: "'Outfit', sans-serif", fontStyle: 'italic',
+    maxWidth: '85%',
   },
   userArea: {
-    borderTop: '1px solid rgba(255,255,255,0.06)',
-    flexShrink: 0,
+    borderTop: '1px solid rgba(255,255,255,0.08)', flexShrink: 0,
+    display: 'flex', flexDirection: 'column',
   },
-  userDivider: {
-    marginBottom: '12px',
-  },
-  userInner: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    overflow: 'hidden',
-  },
+  userDivider: { marginBottom: 8 },
+  userInner: { display: 'flex', alignItems: 'center', gap: 9, overflow: 'hidden' },
   avatar: {
-    width: '32px',
-    height: '32px',
-    borderRadius: '50%',
-    background: 'var(--accent)',
-    color: '#fff',
-    fontSize: '12px',
-    fontWeight: 700,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-    letterSpacing: '0.03em',
+    width: 34, height: 34, borderRadius: '50%',
+    background: `linear-gradient(135deg, ${PU} 0%, #C4874A 100%)`,
+    color: '#fff', fontSize: 11, fontWeight: 800,
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    flexShrink: 0, letterSpacing: '0.04em', fontFamily: "'Outfit', sans-serif",
   },
-  userInfo: {
-    display: 'flex',
-    flexDirection: 'column',
-    overflow: 'hidden',
-    flex: 1,
-  },
+  userInfo: { display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' },
   userName: {
-    fontSize: '13px',
-    fontWeight: 600,
-    color: '#fff',
-    whiteSpace: 'nowrap',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
+    fontSize: 13, fontWeight: 700, color: '#FFFFFF',
+    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+    fontFamily: "'Outfit', sans-serif",
   },
   userRole: {
-    fontSize: '11px',
-    color: 'rgba(255,255,255,0.4)',
-    whiteSpace: 'nowrap',
-    textTransform: 'uppercase',
-    letterSpacing: '0.05em',
+    fontSize: 11, color: 'rgba(255,255,255,0.6)',
+    fontFamily: "'Outfit', sans-serif", whiteSpace: 'nowrap',
   },
-  logoutBtn: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-    background: 'none',
-    border: 'none',
-    color: 'rgba(255,255,255,0.35)',
-    fontSize: '12px',
-    cursor: 'pointer',
-    padding: '6px 0',
-    marginTop: '8px',
-    transition: 'color var(--transition)',
-    fontWeight: 500,
+  signOutBtn: {
+    background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer',
+    padding: '4px', borderRadius: 6,
+    display: 'flex', alignItems: 'center', flexShrink: 0,
   },
 }

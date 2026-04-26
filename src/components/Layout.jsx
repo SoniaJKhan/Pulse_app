@@ -74,6 +74,7 @@ export default function Layout() {
       <Dashboard
         onViewAlerts={() => setActivePage('alerts')}
         onGoToClient={goToClient}
+        onNavigate={handleNavigate}
       />
     )
     if (activePage === 'clients') return (

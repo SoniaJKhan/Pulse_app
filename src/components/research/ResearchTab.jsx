@@ -1,11 +1,12 @@
 import React, { useState } from 'react'
 import { useResearchData } from '../../hooks/useResearchData'
 import { useVATasks } from '../../hooks/useVATasks'
+import ClientIntelligence from './ClientIntelligence'
 
 const SURVEY_TYPES = ['Post-Class Pulse', 'Quarterly NPS', 'Exit Survey', 'Ad Hoc']
 const BENCHMARK_HOURS = 2
 
-const SUB_TABS = ['Member Surveys', 'NPS Tracker', 'Review Analysis', 'Competitor Intelligence', 'Response Time', 'Findings']
+const SUB_TABS = ['Member Surveys', 'NPS Tracker', 'Review Analysis', 'Competitor Intelligence', 'Response Time', 'Findings', 'Client Intelligence']
 
 function npsColor(score) {
   if (score >= 50) return { color: '#4A7C5C', bg: 'rgba(74,124,92,0.1)', border: 'rgba(74,124,92,0.25)', label: 'Excellent' }
@@ -821,6 +822,9 @@ export default function ResearchTab({ clientId, clientName }) {
             onUpsert={(month, text) => upsertFindings(clientId, month, text)}
             onCreateTask={handleCreateTaskFromFinding}
           />
+        )}
+        {subTab === 'Client Intelligence' && (
+          <ClientIntelligence clientId={clientId} clientName={clientName} />
         )}
       </div>
     </div>

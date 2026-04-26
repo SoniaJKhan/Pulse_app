@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react'
 
-const LS_BUFFER   = 'pulse_buffer_key'
-const LS_UNSPLASH = 'pulse_unsplash_key'
+const LS_BUFFER    = 'pulse_buffer_key'
+const LS_UNSPLASH  = 'pulse_unsplash_key'
+const LS_ANTHROPIC = 'pulse_anthropic_key'
 
 function SectionCard({ title, subtitle, children }) {
   return (
@@ -172,6 +173,86 @@ function NotificationPreferences() {
   )
 }
 
+function AIIntegrationSection() {
+  const [key, setKey] = useState(() => localStorage.getItem(LS_ANTHROPIC) || '')
+  const [input, setInput] = useState('')
+  const [showInput, setShowInput] = useState(false)
+  const [saved, setSaved] = useState(false)
+
+  const connected = !!key
+
+  const handleSave = () => {
+    if (!input.trim()) return
+    localStorage.setItem(LS_ANTHROPIC, input.trim())
+    setKey(input.trim())
+    setInput('')
+    setShowInput(false)
+    setSaved(true)
+    setTimeout(() => setSaved(false), 2500)
+  }
+
+  const handleRemove = () => {
+    localStorage.removeItem(LS_ANTHROPIC)
+    setKey('')
+    setShowInput(false)
+  }
+
+  return (
+    <SectionCard
+      title="AI Integration"
+      subtitle="Connect your Anthropic API key to enable real AI-powered analysis in the Intelligence Flow."
+    >
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 20, flexWrap: 'wrap' }}>
+        <div>
+          <label style={s.fieldLabel}>Anthropic API Key</label>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+            {connected ? (
+              <span style={s.connectedStatus}>
+                <span style={s.connectedDot} />
+                Connected
+              </span>
+            ) : (
+              <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: 'var(--mid-grey)', fontFamily: "'Outfit', sans-serif" }}>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--mid-grey)', flexShrink: 0, display: 'inline-block' }} />
+                Not Connected
+              </span>
+            )}
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 10 }}>
+          {saved && (
+            <span style={s.savedTag}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+              Saved
+            </span>
+          )}
+
+          {connected ? (
+            <button style={s.disconnectBtn} onClick={handleRemove}>Remove Key</button>
+          ) : showInput ? (
+            <div style={s.inputRow}>
+              <input
+                type="password"
+                style={s.keyInput}
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                placeholder="sk-ant-api03-…"
+                onKeyDown={e => e.key === 'Enter' && handleSave()}
+                autoComplete="off"
+              />
+              <button style={s.saveBtn} onClick={handleSave} disabled={!input.trim()}>Save</button>
+              <button style={s.cancelBtn} onClick={() => setShowInput(false)}>Cancel</button>
+            </div>
+          ) : (
+            <button style={s.connectBtn} onClick={() => setShowInput(true)}>Add API Key</button>
+          )}
+        </div>
+      </div>
+    </SectionCard>
+  )
+}
+
 export default function SettingsPage() {
   return (
     <div style={s.page}>
@@ -182,6 +263,9 @@ export default function SettingsPage() {
           <p style={s.subtitle}>Manage your agency profile, integrations, and platform preferences.</p>
         </div>
       </div>
+
+      {/* AI Integration */}
+      <AIIntegrationSection />
 
       {/* Agency Profile */}
       <SectionCard title="Agency Profile" subtitle="Your agency details used across client communications and reports.">

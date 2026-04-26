@@ -1,7 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(python3 -c \" import sys, json lines = sys.stdin.readlines\\(\\) for line in lines[-50:]: try: obj = json.loads\\(line\\) if obj.get\\('type'\\) == 'user' and 'content' in obj: content = obj['content'] if isinstance\\(content, list\\): for c in content: if isinstance\\(c, dict\\) and c.get\\('type'\\) == 'text': print\\('USER:', c['text'][:500]\\) elif isinstance\\(content, str\\): print\\('USER:', content[:500]\\) elif obj.get\\('type'\\) == 'assistant' and 'content' in obj: content = obj['content'] if isinstance\\(content, list\\): for c in content: if isinstance\\(c, dict\\) and c.get\\('type'\\) == 'text': print\\('ASST:', c['text'][:300]\\) except: pass \")",
+      "Bash(npx vite *)",
+      "Bash(git add *)",
+      "Bash(git commit *)"
     ]
   }
 }

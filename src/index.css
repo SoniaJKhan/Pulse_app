@@ -10,7 +10,9 @@
   --teal:      #4A8C8C;
   --mid-grey:  rgba(255, 255, 255, 0.45);
   --light-grey: rgba(255, 255, 255, 0.1);
-  --border:    rgba(255, 255, 255, 0.06);
+  --border:    rgba(255, 255, 255, 0.08);
+  --text-primary:   #FFFFFF;
+  --text-secondary: rgba(255, 255, 255, 0.6);
   --amber:     #C4874A;
   --red:       #C4503A;
 

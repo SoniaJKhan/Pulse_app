@@ -3,14 +3,14 @@ import ContentCalendar from '../components/social/ContentCalendar'
 import MetricsTracker from '../components/social/MetricsTracker'
 import CompetitorTracker from '../components/social/CompetitorTracker'
 import AIStudio from '../components/social/AIStudio'
-import ResearchTab from '../components/research/ResearchTab'
+import ClientIntelligence from '../components/research/ClientIntelligence'
 import WebsiteTab from '../components/website/WebsiteTab'
 import { useSocialData } from '../hooks/useSocialData'
 import { useResearchData } from '../hooks/useResearchData'
 import { useAlerts } from '../contexts/AlertsContext'
 import { useReportData } from '../hooks/useReportData'
 
-const TABS = ['Overview', 'Social Media', 'Growth & Retention', 'Research', 'VA Support', 'Website', 'Reports']
+const TABS = ['Marketing', 'Operations']
 
 const STATUS_STYLE = {
   Active:     { bg: 'var(--green-bg)',              color: 'var(--green)',    dot: 'var(--green)' },
@@ -345,7 +345,7 @@ function computeAutoHealth(client, npsArray, reviewsArray, unresolvedAlerts, all
 }
 
 export default function ClientProfile({ client, onBack, onUpdate, onToggleChecklist, initialTab }) {
-  const [activeTab, setActiveTab] = useState(initialTab || 'Overview')
+  const [activeTab, setActiveTab] = useState(TABS.includes(initialTab) ? initialTab : 'Marketing')
   const [socialSubTab, setSocialSubTab] = useState('Content Calendar')
   const {
     content, metrics, competitors,
@@ -542,269 +542,63 @@ export default function ClientProfile({ client, onBack, onUpdate, onToggleCheckl
 
       {/* Tab content */}
       <div style={p.tabContent}>
-        {activeTab === 'Overview' ? (
-          <div style={p.overviewGrid} data-layout="overview-grid">
-            {/* Left column */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              {/* Business details */}
-              <div style={p.card}>
-                <h3 style={p.cardTitle}>Business Details</h3>
-                <div style={p.detailList}>
-                  <DetailRow label="Business Name" value={client.businessName} />
-                  <DetailRow label="Owner / Contact" value={client.ownerName} />
-                  <DetailRow label="Email" value={client.email} />
-                  <DetailRow label="Phone" value={client.phone} />
-                  <DetailRow label="Country" value={client.country} />
-                  <DetailRow label="Business Type" value={client.businessType} />
-                  <DetailRow label="Booking Platform" value={client.bookingPlatform} />
-                  <DetailRow label="Monthly Members" value={client.monthlyMemberCount ? client.monthlyMemberCount.toLocaleString() : null} />
-                  <DetailRow label="Package" value={client.package} />
-                </div>
-              </div>
-
-              {/* Notes */}
-              <div style={p.card}>
-                <h3 style={p.cardTitle}>Notes</h3>
-                <textarea
-                  style={p.notesArea}
-                  value={notes}
-                  onChange={e => { setNotes(e.target.value); setNotesSaved(false) }}
-                  placeholder="Add notes about this client — strategy, context, goals..."
-                  rows={5}
-                />
-                <div style={p.notesFooter}>
-                  {!notesSaved && <span style={p.unsaved}>Unsaved changes</span>}
-                  <button
-                    style={{ ...p.saveNotes, ...(notesSaved ? p.saveNotesSaved : {}) }}
-                    onClick={handleSaveNotes}
-                    disabled={notesSaved}
-                  >
-                    {notesSaved ? 'Notes saved' : 'Save Notes'}
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Right column */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              {/* Key dates */}
-              <div style={p.card}>
-                <h3 style={p.cardTitle}>Key Dates</h3>
-                <div style={p.dateList}>
-                  <DateRow label="Client since" value={client.startDate} />
-                  <DateRow label="Last report sent" value={client.lastReportDate} />
-                  <DateRow label="Next report due" value={client.nextReportDue} />
-                  <DateRow label="Next quarterly review" value={client.nextQuarterlyReview} />
-                </div>
-              </div>
-
-              {/* Onboarding checklist */}
-              <div style={p.card}>
-                <div style={p.cardTitleRow}>
-                  <h3 style={p.cardTitle}>Onboarding Checklist</h3>
-                  <span style={{
-                    ...p.checklistBadge,
-                    background: completedTasks === totalTasks ? 'var(--green-bg)' : 'var(--amber-bg)',
-                    color: completedTasks === totalTasks ? 'var(--green)' : 'var(--amber)',
-                  }}>
-                    {completedTasks}/{totalTasks}
-                  </span>
-                </div>
-
-                <div style={p.checklistItems}>
-                  {client.checklist?.map(item => (
-                    <div key={item.id} style={{ ...p.checkItem, justifyContent: 'space-between', alignItems: 'center' }} onClick={() => onToggleChecklist(item.id)}>
-                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '11px', flex: 1, minWidth: 0 }}>
-                        <div style={{
-                          ...p.checkbox,
-                          background: item.completed ? 'var(--accent)' : 'transparent',
-                          borderColor: item.completed ? 'var(--accent)' : 'var(--border)',
-                        }}>
-                          {item.completed && (
-                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                              <polyline points="20 6 9 17 4 12"/>
-                            </svg>
-                          )}
-                        </div>
-                        <div style={p.checkContent}>
-                          <span style={{
-                            ...p.checkTitle,
-                            textDecoration: item.completed ? 'line-through' : 'none',
-                            color: item.completed ? 'var(--mid-grey)' : 'var(--dark)',
-                          }}>
-                            {item.title}
-                          </span>
-                          <span style={p.checkMeta}>
-                            Due {item.due}
-                            {item.completedAt && ` · Completed ${item.completedAt}`}
-                          </span>
-                        </div>
-                      </div>
-                      <select
-                        value={item.assignedTo || ''}
-                        onClick={e => e.stopPropagation()}
-                        onChange={e => { e.stopPropagation(); handleChecklistAssign(item.id, e.target.value) }}
-                        style={{
-                          padding: '3px 8px', borderRadius: '8px', border: '1.5px solid',
-                          fontSize: '11.5px',
-                          color: item.assignedTo === 'Sonia' ? '#C4874A' : item.assignedTo === 'Jehangir' ? '#4A7C5C' : 'var(--mid-grey)',
-                          background: item.assignedTo === 'Sonia' ? 'rgba(196,135,74,0.1)' : item.assignedTo === 'Jehangir' ? 'rgba(74,124,92,0.1)' : 'var(--bg)',
-                          borderColor: item.assignedTo === 'Sonia' ? 'rgba(196,135,74,0.3)' : item.assignedTo === 'Jehangir' ? 'rgba(74,124,92,0.3)' : 'var(--border)',
-                          fontFamily: "'Outfit', sans-serif", cursor: 'pointer', flexShrink: 0,
-                          fontWeight: item.assignedTo ? 600 : 400,
-                        }}
-                      >
-                        <option value="">Assign</option>
-                        <option>Sonia</option>
-                        <option>Jehangir</option>
-                      </select>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              {/* Platform Access */}
-              <div style={p.card}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                  </svg>
-                  <h3 style={{ ...p.cardTitle, marginBottom: 0 }}>Platform Access</h3>
-                </div>
-
-                {credentials.length === 0 && !addingCred && (
-                  <p style={{ fontSize: '13px', color: 'var(--mid-grey)', fontStyle: 'italic', marginBottom: '12px' }}>
-                    No platforms added yet.
-                  </p>
-                )}
-
-                {credentials.map(cred => (
-                  <div key={cred.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '9px 0', borderBottom: '1px solid var(--border)', gap: '10px' }}>
-                    <div>
-                      <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--dark)' }}>{cred.platform}</div>
-                      <div style={{ fontSize: '12px', color: 'var(--mid-grey)', marginTop: '1px' }}>{cred.loginEmail || <span style={{ fontStyle: 'italic' }}>No email saved</span>}</div>
-                    </div>
-                    <button
-                      onClick={() => handleRemoveCredential(cred.id)}
-                      style={{ background: 'none', border: 'none', color: 'var(--mid-grey)', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', borderRadius: '4px' }}
-                      title="Remove"
-                    >
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                      </svg>
-                    </button>
-                  </div>
-                ))}
-
-                {addingCred ? (
-                  <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <input
-                      style={{ ...p.notesArea, resize: 'none', padding: '8px 10px', fontSize: '13px', lineHeight: 1 }}
-                      placeholder="Platform name (e.g. Instagram)"
-                      value={newCredPlatform}
-                      onChange={e => setNewCredPlatform(e.target.value)}
-                    />
-                    <input
-                      style={{ ...p.notesArea, resize: 'none', padding: '8px 10px', fontSize: '13px', lineHeight: 1 }}
-                      placeholder="Login email"
-                      type="email"
-                      value={newCredEmail}
-                      onChange={e => setNewCredEmail(e.target.value)}
-                      onKeyDown={e => e.key === 'Enter' && handleAddCredential()}
-                    />
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <button onClick={handleAddCredential} style={{ padding: '6px 14px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '12.5px', fontWeight: 600, cursor: 'pointer', fontFamily: "'Outfit', sans-serif" }}>Save</button>
-                      <button onClick={() => { setAddingCred(false); setNewCredPlatform(''); setNewCredEmail('') }} style={{ padding: '6px 12px', background: 'none', color: 'var(--mid-grey)', border: '1.5px solid var(--border)', borderRadius: '8px', fontSize: '12.5px', cursor: 'pointer', fontFamily: "'Outfit', sans-serif" }}>Cancel</button>
-                    </div>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => setAddingCred(true)}
-                    style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '5px', background: 'none', border: 'none', color: 'var(--accent)', fontSize: '13px', fontWeight: 600, cursor: 'pointer', padding: '0', fontFamily: "'Outfit', sans-serif" }}
-                  >
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-                    </svg>
-                    Add Platform
-                  </button>
-                )}
-
-                <p style={{ fontSize: '11.5px', color: 'var(--red)', marginTop: '14px', paddingTop: '12px', borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'flex-start', gap: '5px', fontWeight: 600 }}>
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: '1px' }}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                  Passwords must be stored in your password manager — not here.
-                </p>
-              </div>
-            </div>
-          </div>
-        ) : activeTab === 'Social Media' ? (
-          <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', overflow: 'hidden' }}>
-            {/* Sub-tab bar */}
-            <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', background: 'var(--bg)' }}>
-              {SOCIAL_SUB_TABS.map(tab => (
-                <button
-                  key={tab}
-                  type="button"
-                  onClick={() => setSocialSubTab(tab)}
-                  style={{
-                    padding: '11px 20px',
-                    fontSize: '13px',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    border: 'none',
-                    borderBottom: socialSubTab === tab ? '2px solid var(--accent)' : '2px solid transparent',
-                    background: 'transparent',
-                    color: socialSubTab === tab ? 'var(--accent)' : 'var(--mid-grey)',
-                    fontFamily: "'Outfit', sans-serif",
-                    marginBottom: '-1px',
-                  }}
-                >
-                  {tab}
-                </button>
-              ))}
-            </div>
-
-            {socialSubTab === 'Content Calendar' && (
-              <ContentCalendar
-                clientId={client.id}
-                content={content.filter(c => c.clientId === client.id)}
-                onAdd={addContent}
-                onUpdate={updateContent}
-                onDelete={deleteContent}
-              />
-            )}
-            {socialSubTab === 'Metrics' && (
-              <MetricsTracker
-                clientId={client.id}
-                metrics={metrics}
-                onUpsert={upsertMetrics}
-              />
-            )}
-            {socialSubTab === 'Competitors' && (
-              <CompetitorTracker
-                clientId={client.id}
-                competitors={competitors}
-                onAdd={addCompetitor}
-                onUpdate={updateCompetitor}
-                onDelete={deleteCompetitor}
-              />
-            )}
-            {socialSubTab === 'AI Studio' && (
+        {activeTab === 'Marketing' ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
+            {/* Brand Kit */}
+            <div>
+              <div style={p.sectionLabel}>Brand Kit</div>
               <AIStudio
                 client={client}
                 onAddContent={addContent}
-                onSwitchToCalendar={() => setSocialSubTab('Content Calendar')}
+                onSwitchToCalendar={() => {}}
               />
-            )}
+            </div>
+
+            {/* Intelligence Flow */}
+            <div>
+              <div style={p.sectionLabel}>Intelligence Flow</div>
+              <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '24px 28px' }}>
+                <ClientIntelligence clientId={client.id} />
+              </div>
+            </div>
+
+            {/* Content Calendar */}
+            <div>
+              <div style={p.sectionLabel}>Content Calendar</div>
+              <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', overflow: 'hidden' }}>
+                <ContentCalendar
+                  clientId={client.id}
+                  content={content.filter(c => c.clientId === client.id)}
+                  onAdd={addContent}
+                  onUpdate={updateContent}
+                  onDelete={deleteContent}
+                />
+              </div>
+            </div>
           </div>
-        ) : activeTab === 'Growth & Retention' ? (
-          <GrowthRetentionTab client={client} onUpdate={onUpdate} addManualAlert={addManualAlert} />
-        ) : activeTab === 'Research' ? (
-          <ResearchTab clientId={client.id} clientName={client.businessName} />
-        ) : activeTab === 'Website' ? (
-          <WebsiteTab clientId={client.id} />
-        ) : (
-          <PlaceholderTab name={activeTab} />
-        )}
+        ) : activeTab === 'Operations' ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
+            {/* Growth & Retention */}
+            <div>
+              <div style={p.sectionLabel}>Growth & Retention</div>
+              <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', overflow: 'hidden' }}>
+                <GrowthRetentionTab client={client} onUpdate={onUpdate} addManualAlert={addManualAlert} />
+              </div>
+            </div>
+
+            {/* VA Tasks */}
+            <div>
+              <div style={p.sectionLabel}>VA Tasks</div>
+              <PlaceholderTab name="VA Support" />
+            </div>
+
+            {/* Reports */}
+            <div>
+              <div style={p.sectionLabel}>Reports</div>
+              <PlaceholderTab name="Reports" />
+            </div>
+          </div>
+        ) : null}
       </div>
     </div>
   )
@@ -985,27 +779,38 @@ const p = {
     display: 'flex',
     gap: '0',
     borderBottom: '1px solid var(--border)',
-    marginBottom: '24px',
+    marginBottom: '28px',
     overflowX: 'auto',
     background: 'var(--bg-card)',
     borderTop: '1px solid var(--border)',
   },
   tab: {
-    padding: '13px 18px',
+    padding: '16px 32px',
     background: 'none',
     border: 'none',
-    borderBottom: '2px solid transparent',
-    fontSize: '13.5px',
-    fontWeight: 500,
+    borderBottom: '3px solid transparent',
+    fontSize: '16px',
+    fontWeight: 600,
     color: 'var(--mid-grey)',
     cursor: 'pointer',
     whiteSpace: 'nowrap',
     transition: 'color var(--transition)',
+    fontFamily: "'Libre Baskerville', serif",
+    letterSpacing: '0.01em',
   },
   tabActive: {
-    color: 'var(--accent)',
-    borderBottomColor: 'var(--accent)',
-    fontWeight: 600,
+    color: 'var(--dark)',
+    borderBottomColor: '#C4874A',
+    fontWeight: 700,
+  },
+  sectionLabel: {
+    fontSize: 11,
+    fontWeight: 700,
+    color: 'var(--mid-grey)',
+    textTransform: 'uppercase',
+    letterSpacing: '0.08em',
+    fontFamily: "'Outfit', sans-serif",
+    marginBottom: 12,
   },
   tabContent: {
     minHeight: '400px',
