@@ -1,107 +1,193 @@
-import React, { useState } from 'react'
-import { BG, CARD, PU, PL, MI, BD, TX, LBL, INP, PBtn, EmptyState, RunBtn, OutlineBtn, OutputRenderer, PlatDot, callClaude, PLATS, CTYPES } from './socialUtils.jsx'
+import React, { useState, useEffect, useCallback } from 'react'
+import { BG, CARD, MI, BD, TX, LBL, INP, SH } from './socialUtils.jsx'
 
-export default function CompetitorsTab({ analysis, upd, pushToast }) {
-  const [adding, setAdding]     = useState(false)
-  const [compForm, setCompForm] = useState({ handle: '', platform: 'Instagram', niche: '' })
-  const [postForms, setPostForms] = useState({})
-  const [loading, setLoading]   = useState(false)
-  const [hasKey, setHasKey]     = useState(() => !!localStorage.getItem('pulse_anthropic_key'))
-  const cf = (k, v) => setCompForm(p => ({ ...p, [k]: v }))
+const PLATFORMS   = ['Instagram', 'TikTok', 'Facebook', 'LinkedIn', 'YouTube']
+const CTYPES      = ['Reel', 'Carousel', 'Static Post', 'Story', 'Video', 'Blog']
+const HOOK_TYPES  = ['Emotional', 'Educational', 'Trend', 'Humour', 'Inspirational']
 
-  const saveComp = () => {
-    if (!compForm.handle.trim()) return
-    upd({ competitors: [...analysis.competitors, { id: `comp${Date.now()}`, ...compForm, topPosts: [] }] })
-    setCompForm({ handle: '', platform: 'Instagram', niche: '' }); setAdding(false)
-  }
+const ORANGE = '#F97316'
+const PURPLE = '#7C3AED'
 
-  const addPost = (compId) => {
-    const pf = postForms[compId] || {}
-    if (!pf.type) return
-    upd({ competitors: analysis.competitors.map(c => c.id === compId ? { ...c, topPosts: [...(c.topPosts || []), { id: `tp${Date.now()}`, views: Number(pf.views) || 0, type: pf.type || '', hookStyle: pf.hookStyle || '' }] } : c) })
-    setPostForms(p => ({ ...p, [compId]: {} }))
-  }
+const emptyPost = () => ({ id: `tp${Date.now()}${Math.random().toString(36).slice(2)}`, contentType: '', views: '', likes: '', hookType: '', whyItWorked: '' })
+const emptyComp = () => ({ id: `c${Date.now()}${Math.random().toString(36).slice(2)}`, handle: '', platform: 'Instagram', niche: '', posts: [] })
 
-  const runAnalysis = async () => {
-    if (!hasKey) return
-    setLoading(true)
-    try {
-      const prompt = `Analyse only the competitor data provided. Identify specific hook patterns, content formats and engagement triggers.\n\nReturn valid JSON only:\n{"formats":"common high-performing formats","hookPatterns":"hook patterns from top posts","videoStructure":"video structure trends","engagementTriggers":"what drives engagement"}\n\nData: ${JSON.stringify(analysis.competitors)}`
-      const res = await callClaude([{ role: 'user', content: prompt }], 800)
-      upd({ competitorResult: res })
-      pushToast('Competitor analysis complete!')
-    } catch (e) {
-      if (e.message === 'NO_KEY') setHasKey(false)
-      else pushToast(e.message.slice(0, 80), 'error')
+function load(clientId) {
+  if (!clientId) return [emptyComp()]
+  try {
+    const raw = localStorage.getItem(`pulse_competitors_${clientId}`)
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      return Array.isArray(parsed) && parsed.length ? parsed : [emptyComp()]
     }
-    setLoading(false)
+  } catch {}
+  return [emptyComp()]
+}
+
+export default function CompetitorsTab({ clientId, pushToast, onAdvance }) {
+  const [comps, setComps] = useState(() => load(clientId))
+
+  useEffect(() => {
+    setComps(load(clientId))
+  }, [clientId])
+
+  const setComp = useCallback((id, patch) => {
+    setComps(prev => prev.map(c => c.id === id ? { ...c, ...patch } : c))
+  }, [])
+
+  const setPost = useCallback((compId, postId, patch) => {
+    setComps(prev => prev.map(c =>
+      c.id === compId
+        ? { ...c, posts: c.posts.map(p => p.id === postId ? { ...p, ...patch } : p) }
+        : c
+    ))
+  }, [])
+
+  const removePost = useCallback((compId, postId) => {
+    setComps(prev => prev.map(c =>
+      c.id === compId ? { ...c, posts: c.posts.filter(p => p.id !== postId) } : c
+    ))
+  }, [])
+
+  const addPost = useCallback((compId) => {
+    setComps(prev => prev.map(c =>
+      c.id === compId ? { ...c, posts: [...c.posts, emptyPost()] } : c
+    ))
+  }, [])
+
+  const removeComp = useCallback((id) => {
+    setComps(prev => prev.filter(c => c.id !== id))
+  }, [])
+
+  const addComp = () => setComps(prev => [...prev, emptyComp()])
+
+  const handleSave = () => {
+    if (clientId) {
+      localStorage.setItem(`pulse_competitors_${clientId}`, JSON.stringify(comps))
+    }
+    pushToast?.('Competitors saved')
+    onAdvance?.()
   }
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
-        <div>
-          <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: TX, fontFamily: "'Outfit',sans-serif" }}>Competitor Analysis</h3>
-          <p style={{ margin: '4px 0 0', fontSize: 13, color: MI, fontFamily: "'Outfit',sans-serif" }}>Add competitors and their top posts.</p>
-        </div>
-        <div style={{ display: 'flex', gap: 10 }}>
-          {hasKey && analysis.competitors.length > 0 && <RunBtn label="Run Analysis" onClick={runAnalysis} loading={loading} />}
-          <OutlineBtn label="+ Add Competitor" onClick={() => setAdding(true)} />
-        </div>
+      {/* Header */}
+      <div style={{ marginBottom: 24 }}>
+        <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: TX, fontFamily: "'Outfit',sans-serif" }}>Competitor Analysis</h3>
+        <p style={{ margin: '5px 0 0', fontSize: 13, color: MI, fontFamily: "'Outfit',sans-serif" }}>Add 2–5 competitors. This sharpens your strategy.</p>
       </div>
-      {!hasKey && <div style={{ padding: '11px 14px', background: `${PU}12`, borderRadius: 10, color: PL, fontSize: 13, fontFamily: "'Outfit',sans-serif", marginBottom: 16 }}>Add your Anthropic API key in Settings to run AI analysis.</div>}
-      {adding && (
-        <div style={{ background: BG, borderRadius: 12, padding: 20, marginBottom: 16, border: `1px solid ${BD}` }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 12 }}>
-            <div><label style={LBL}>Handle / Name</label><input value={compForm.handle} onChange={e => cf('handle', e.target.value)} placeholder="@handle" style={INP} /></div>
-            <div><label style={LBL}>Platform</label><select value={compForm.platform} onChange={e => cf('platform', e.target.value)} style={INP}>{PLATS.map(p => <option key={p}>{p}</option>)}</select></div>
-            <div><label style={LBL}>Niche</label><input value={compForm.niche} onChange={e => cf('niche', e.target.value)} placeholder="e.g. yoga studio" style={INP} /></div>
-          </div>
-          <div style={{ display: 'flex', gap: 10 }}>
-            <button onClick={saveComp} style={{ ...PBtn(), width: 'auto', padding: '9px 22px' }}>Add Competitor</button>
-            <button onClick={() => setAdding(false)} style={{ padding: '9px 18px', borderRadius: 10, border: `1.5px solid ${BD}`, background: 'none', color: MI, fontSize: 13, cursor: 'pointer', fontFamily: "'Outfit',sans-serif" }}>Cancel</button>
-          </div>
-        </div>
-      )}
-      {analysis.competitors.length === 0 && !adding
-        ? <EmptyState icon="🔍" msg="No competitors added yet." sub="Add competitors to analyse their content strategy." />
-        : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 20 }}>
-            {analysis.competitors.map(comp => (
-              <div key={comp.id} style={{ background: CARD, borderRadius: 12, border: `1px solid ${BD}`, overflow: 'hidden' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', borderBottom: `1px solid ${BD}`, background: BG }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <PlatDot p={comp.platform} size={10} />
-                    <span style={{ fontSize: 15, fontWeight: 700, color: TX, fontFamily: "'Outfit',sans-serif" }}>{comp.handle}</span>
-                    <span style={{ fontSize: 12, color: MI, fontFamily: "'Outfit',sans-serif" }}>{comp.platform} · {comp.niche}</span>
-                  </div>
-                  <button onClick={() => upd({ competitors: analysis.competitors.filter(c => c.id !== comp.id) })} style={{ background: 'none', border: 'none', color: '#C4503A', cursor: 'pointer', fontSize: 13, fontFamily: "'Outfit',sans-serif" }}>Remove</button>
+
+      {/* Competitor blocks */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 18, marginBottom: 20 }}>
+        {comps.map((comp, ci) => (
+          <div key={comp.id} style={{ background: CARD, borderRadius: 16, boxShadow: SH, borderLeft: `4px solid ${ORANGE}`, overflow: 'hidden' }}>
+
+            {/* Competitor header */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px', borderBottom: `1px solid ${BD}` }}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: MI, fontFamily: "'Outfit',sans-serif", textTransform: 'uppercase', letterSpacing: '.05em' }}>
+                Competitor {ci + 1}
+              </span>
+              <button
+                onClick={() => removeComp(comp.id)}
+                title="Remove competitor"
+                style={{ background: 'rgba(239,68,68,0.1)', border: 'none', color: '#EF4444', cursor: 'pointer', borderRadius: 7, width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/>
+                </svg>
+              </button>
+            </div>
+
+            <div style={{ padding: '18px 20px' }}>
+              {/* Competitor fields */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14, marginBottom: 20 }}>
+                <div>
+                  <label style={LBL}>Handle</label>
+                  <input value={comp.handle} onChange={e => setComp(comp.id, { handle: e.target.value })} placeholder="@handle" style={INP} />
                 </div>
-                <div style={{ padding: '14px 18px' }}>
-                  {(comp.topPosts || []).map((post, i) => (
-                    <div key={post.id} style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 6, padding: '7px 10px', background: BG, borderRadius: 8 }}>
-                      <span style={{ fontSize: 12, color: MI, fontFamily: "'Outfit',sans-serif", width: 20 }}>#{i + 1}</span>
-                      <span style={{ fontSize: 12, fontWeight: 600, color: TX, fontFamily: "'Outfit',sans-serif" }}>{post.type}</span>
-                      {post.hookStyle && <span style={{ fontSize: 11, color: PL, fontFamily: "'Outfit',sans-serif" }}>{post.hookStyle}</span>}
-                      {post.views > 0 && <span style={{ fontSize: 11, color: MI, fontFamily: "'Outfit',sans-serif" }}>{post.views.toLocaleString()} views</span>}
-                    </div>
-                  ))}
-                  <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
-                    <select value={postForms[comp.id]?.type || ''} onChange={e => setPostForms(p => ({ ...p, [comp.id]: { ...(p[comp.id] || {}), type: e.target.value } }))} style={{ ...INP, width: 110 }}><option value="">Type…</option>{CTYPES.map(t => <option key={t}>{t}</option>)}</select>
-                    <input placeholder="Hook style" value={postForms[comp.id]?.hookStyle || ''} onChange={e => setPostForms(p => ({ ...p, [comp.id]: { ...(p[comp.id] || {}), hookStyle: e.target.value } }))} style={{ ...INP, width: 120 }} />
-                    <input type="number" placeholder="Views" value={postForms[comp.id]?.views || ''} onChange={e => setPostForms(p => ({ ...p, [comp.id]: { ...(p[comp.id] || {}), views: e.target.value } }))} style={{ ...INP, width: 90 }} />
-                    <button onClick={() => addPost(comp.id)} style={{ padding: '9px 16px', borderRadius: 9, border: 'none', background: PU, color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: "'Outfit',sans-serif", whiteSpace: 'nowrap' }}>Add Post</button>
-                  </div>
+                <div>
+                  <label style={LBL}>Platform</label>
+                  <select value={comp.platform} onChange={e => setComp(comp.id, { platform: e.target.value })} style={INP}>
+                    {PLATFORMS.map(p => <option key={p}>{p}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={LBL}>Niche</label>
+                  <input value={comp.niche} onChange={e => setComp(comp.id, { niche: e.target.value })} placeholder="e.g. yoga, fitness, wellness" style={INP} />
                 </div>
               </div>
-            ))}
+
+              {/* Post rows */}
+              {comp.posts.length > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
+                  {comp.posts.map(post => (
+                    <div key={post.id} style={{ background: BG, borderRadius: 8, padding: '12px 14px', display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+                      <div style={{ flex: '0 0 130px' }}>
+                        <label style={LBL}>Content Type</label>
+                        <select value={post.contentType} onChange={e => setPost(comp.id, post.id, { contentType: e.target.value })} style={INP}>
+                          <option value="">Select…</option>
+                          {CTYPES.map(t => <option key={t}>{t}</option>)}
+                        </select>
+                      </div>
+                      <div style={{ flex: '0 0 90px' }}>
+                        <label style={LBL}>Views</label>
+                        <input type="number" min="0" value={post.views} onChange={e => setPost(comp.id, post.id, { views: e.target.value })} placeholder="0" style={INP} />
+                      </div>
+                      <div style={{ flex: '0 0 90px' }}>
+                        <label style={LBL}>Likes</label>
+                        <input type="number" min="0" value={post.likes} onChange={e => setPost(comp.id, post.id, { likes: e.target.value })} placeholder="0" style={INP} />
+                      </div>
+                      <div style={{ flex: '0 0 145px' }}>
+                        <label style={LBL}>Hook Type</label>
+                        <select value={post.hookType} onChange={e => setPost(comp.id, post.id, { hookType: e.target.value })} style={INP}>
+                          <option value="">Select…</option>
+                          {HOOK_TYPES.map(h => <option key={h}>{h}</option>)}
+                        </select>
+                      </div>
+                      <div style={{ flex: '1 1 160px' }}>
+                        <label style={LBL}>Why It Worked</label>
+                        <input value={post.whyItWorked} onChange={e => setPost(comp.id, post.id, { whyItWorked: e.target.value })} placeholder="Why did this perform?" style={INP} />
+                      </div>
+                      <button
+                        onClick={() => removePost(comp.id, post.id)}
+                        title="Remove post"
+                        style={{ background: 'rgba(239,68,68,0.1)', border: 'none', color: '#EF4444', cursor: 'pointer', borderRadius: 7, width: 34, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, flexShrink: 0, alignSelf: 'flex-end' }}
+                      >
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/>
+                        </svg>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Add Post button */}
+              <button
+                onClick={() => addPost(comp.id)}
+                style={{ padding: '8px 18px', borderRadius: 9, border: 'none', background: ORANGE, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: "'Outfit',sans-serif" }}
+              >
+                + Add Post
+              </button>
+            </div>
           </div>
-        )}
-      {analysis.competitorResult && (
-        <div style={{ marginTop: 16, background: BG, borderRadius: 10, padding: '14px 16px', border: `1px solid ${BD}` }}>
-          <OutputRenderer data={analysis.competitorResult} />
-        </div>
-      )}
+        ))}
+      </div>
+
+      {/* Add Competitor + Save */}
+      <div style={{ display: 'flex', gap: 12, justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' }}>
+        <button
+          onClick={addComp}
+          style={{ padding: '10px 22px', borderRadius: 11, border: 'none', background: PURPLE, color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: "'Outfit',sans-serif" }}
+        >
+          + Add Competitor
+        </button>
+        <button
+          onClick={handleSave}
+          style={{ padding: '10px 28px', borderRadius: 11, border: 'none', background: ORANGE, color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: "'Outfit',sans-serif" }}
+        >
+          Save &amp; Continue
+        </button>
+      </div>
     </div>
   )
 }

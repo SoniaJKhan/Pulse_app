@@ -204,7 +204,7 @@ export default function SocialMediaPage() {
               {activeTab === 'client'      && <ClientTab key={clientFormKey} client={client} saveClient={saveClient} onClientSaved={handleClientSaved} pushToast={pushToast} />}
               {activeTab === 'brandkit'    && <BrandKitTab open={true} onClose={() => setActiveTab('client')} clientId={selectedId} />}
               {activeTab === 'audit'       && <AuditTab clientId={selectedId} pushToast={pushToast} />}
-              {activeTab === 'competitors' && <CompetitorsTab analysis={analysis} upd={updAnalysis} pushToast={pushToast} />}
+              {activeTab === 'competitors' && <CompetitorsTab clientId={selectedId} pushToast={pushToast} onAdvance={() => setActiveTab('analysis')} />}
               {activeTab === 'analysis'    && <AnalysisTab analysis={analysis} upd={updAnalysis} clientId={selectedId} client={client} content={content} addContent={addContent} pushToast={pushToast} onGoToCalendar={goToPublish} />}
               {activeTab === 'strategy'    && <StrategyTab analysis={analysis} upd={updAnalysis} pushToast={pushToast} />}
               {activeTab === 'create'      && <CreateTab client={client} content={content} addContent={addContent} onOpenNewPost={() => setShowNewPost(true)} onOpenIntelligence={openIntelligence} pushToast={pushToast} />}

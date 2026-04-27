@@ -24,7 +24,7 @@ export default function AnalysisTab({ analysis, upd, clientId, client, content, 
         ))}
       </div>
       {subTab === 'audit'       && <AuditTab analysis={analysis} upd={upd} client={client} pushToast={pushToast} />}
-      {subTab === 'competitors' && <CompetitorsTab analysis={analysis} upd={upd} pushToast={pushToast} />}
+      {subTab === 'competitors' && <CompetitorsTab clientId={clientId} pushToast={pushToast} />}
       {subTab === 'strategy'    && <StrategyTab analysis={analysis} upd={upd} pushToast={pushToast} />}
       {subTab === 'output'      && <ReportTab analysis={analysis} upd={upd} clientId={clientId} addContent={addContent} pushToast={pushToast} onGoToCalendar={onGoToCalendar} />}
     </div>
