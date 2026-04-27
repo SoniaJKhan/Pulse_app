@@ -2,6 +2,7 @@ export const cleanupLegacyKeys = () => {
   const legacyKeys = [
     'pulse_client_intelligence',
     'pulse_client',
+    'pulse_brand',
     'pulse_brand2',
     'pulse_brand_kit_c2',
     'pulse_content_audit',
