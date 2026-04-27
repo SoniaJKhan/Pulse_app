@@ -1,46 +1,175 @@
-import React, { useState } from 'react'
-import { BG, CARD, PU, PL, MI, BD, TX, INP, AIBlock, callClaude } from './socialUtils.jsx'
+import React, { useState, useEffect } from 'react'
+import { callClaude } from './socialUtils.jsx'
 
-export default function StrategyTab({ analysis, upd, pushToast }) {
-  const [loadingMap, setLoadingMap] = useState({})
-  const [hasKey, setHasKey]         = useState(() => !!localStorage.getItem('pulse_anthropic_key'))
-  const OBJECTIVES = ['Engagement', 'Reach', 'DMs', 'Testing Reels', 'Lead Gen', 'Brand Awareness']
+const BG   = '#F7F5FF'
+const CARD = '#FFFFFF'
+const OR   = '#F97316'
+const PU   = '#7C3AED'
+const TX   = '#1A1A1A'
+const MI   = '#6B7280'
+const BD   = '#E5E7EB'
+const FF   = "'Outfit', sans-serif"
 
-  const run = async (key, prompt, maxTokens = 900) => {
-    if (!hasKey) return
-    setLoadingMap(l => ({ ...l, [key]: true }))
+function loadAnalysis(clientId) {
+  try { return JSON.parse(localStorage.getItem(`pulse_analysis_${clientId}`) || 'null') } catch { return null }
+}
+function loadStrategy(clientId) {
+  try { return JSON.parse(localStorage.getItem(`pulse_strategy_${clientId}`) || 'null') } catch { return null }
+}
+
+function ListCard({ title, items, accent }) {
+  if (!items?.length) return null
+  return (
+    <div style={{ background: CARD, borderRadius: 14, padding: '18px 20px', border: `1px solid ${BD}`, borderLeft: `4px solid ${accent || OR}`, boxShadow: '0 1px 8px rgba(0,0,0,0.05)' }}>
+      <div style={{ fontSize: 11, fontWeight: 700, color: MI, textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 12, fontFamily: FF }}>{title}</div>
+      <ul style={{ margin: 0, paddingLeft: 18 }}>
+        {items.map((item, i) => <li key={i} style={{ fontSize: 14, color: TX, fontFamily: FF, marginBottom: 6, lineHeight: 1.5 }}>{item}</li>)}
+      </ul>
+    </div>
+  )
+}
+
+export default function StrategyTab({ clientId, pushToast, onGoToCreate, onGoToAnalysis }) {
+  const [analysis, setAnalysis] = useState(null)
+  const [strategy, setStrategy] = useState(null)
+  const [loading,  setLoading]  = useState(false)
+  const [hasKey,   setHasKey]   = useState(() => !!localStorage.getItem('pulse_anthropic_key'))
+
+  useEffect(() => {
+    setAnalysis(loadAnalysis(clientId))
+    setStrategy(loadStrategy(clientId))
+  }, [clientId])
+
+  const runStrategy = async () => {
+    setLoading(true)
     try {
-      const res = await callClaude([{ role: 'user', content: prompt }], maxTokens)
-      upd({ [key]: res })
-      pushToast('Generated!')
+      const prompt = `Based on this analysis generate a content strategy. Be specific and actionable.
+
+Return ONLY JSON:
+{
+  "pillars": [{ "name": "string", "description": "string" }],
+  "hooks": ["string"],
+  "postingPlan": { "reels": number, "posts": number, "stories": number },
+  "contentDirection": ["string"],
+  "ctaStyle": ["string"],
+  "weeklyFocus": "string"
+}
+
+Analysis Data: ${JSON.stringify(analysis)}`
+
+      const res = await callClaude([{ role: 'user', content: prompt }], 1200)
+      localStorage.setItem(`pulse_strategy_${clientId}`, JSON.stringify(res))
+      setStrategy(res)
+      pushToast?.('Strategy generated!')
     } catch (e) {
       if (e.message === 'NO_KEY') setHasKey(false)
-      else pushToast(e.message.slice(0, 80), 'error')
+      else pushToast?.(e.message.slice(0, 80), 'error')
     }
-    setLoadingMap(l => ({ ...l, [key]: false }))
+    setLoading(false)
   }
 
-  const ctx      = JSON.stringify({ contentPatterns: analysis.contentResult, competitorInsights: analysis.competitorResult, weeklyObjective: analysis.weeklyObjective })
-  const mergeP   = `You are a social media strategist. Merge the content and competitor findings. Base everything strictly on the provided data.\n\nReturn valid JSON only:\n{"whatToDo":["action 1","action 2","action 3"],"whatToAvoid":["avoid 1","avoid 2"],"contentDirection":"recommended content direction"}\n\nData: ${ctx}`
-  const formatP  = `Define format rules based on this client's brand and strategy data.\n\nReturn valid JSON only:\n{"formatType":"best content format","hookType":"best hook type","idealLength":"ideal length with reasoning","style":"visual style and why"}\n\nData: ${JSON.stringify({ strategy: analysis.strategyResult, weeklyObjective: analysis.weeklyObjective })}`
-  const execP    = `Define execution rules for this client. No generic advice.\n\nReturn valid JSON only:\n{"postingFrequency":"recommended frequency with reasoning","contentMix":"content mix ratio","toneGuidance":"specific tone guidance","ctaStyle":"CTA style"}\n\nData: ${JSON.stringify({ strategy: analysis.strategyResult, formatRules: analysis.formatRules })}`
-
   return (
-    <div>
-      <h3 style={{ margin: '0 0 6px', fontSize: 16, fontWeight: 700, color: TX, fontFamily: "'Outfit',sans-serif" }}>Strategy</h3>
-      <p style={{ margin: '0 0 22px', fontSize: 13, color: MI, fontFamily: "'Outfit',sans-serif" }}>Merge your analysis into a clear strategic direction.</p>
-      {!hasKey && <div style={{ padding: '11px 14px', background: `${PU}12`, borderRadius: 10, color: PL, fontSize: 13, fontFamily: "'Outfit',sans-serif", marginBottom: 16 }}>Add your Anthropic API key in Settings to run strategy generation.</div>}
-      <AIBlock title="Merge Insights" desc="What to do, what to avoid, and your content direction — merged from content and competitor findings." onRun={() => run('strategyResult', mergeP)} loading={!!loadingMap.strategyResult} output={analysis.strategyResult} hasKey={hasKey} />
-      <div style={{ background: CARD, borderRadius: 12, border: `1px solid ${BD}`, padding: '18px 20px', marginBottom: 14 }}>
-        <h4 style={{ margin: '0 0 6px', fontSize: 14, fontWeight: 700, color: TX, fontFamily: "'Outfit',sans-serif" }}>Weekly Objective</h4>
-        <p style={{ margin: '0 0 12px', fontSize: 12, color: MI, fontFamily: "'Outfit',sans-serif" }}>What are we focusing on this week?</p>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, marginBottom: 10 }}>
-          {OBJECTIVES.map(o => <button key={o} onClick={() => upd({ weeklyObjective: analysis.weeklyObjective === o ? '' : o })} style={{ padding: '6px 14px', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: "'Outfit',sans-serif", border: `1.5px solid ${analysis.weeklyObjective === o ? PU : BD}`, background: analysis.weeklyObjective === o ? `${PU}18` : 'transparent', color: analysis.weeklyObjective === o ? PL : MI }}>{o}</button>)}
-        </div>
-        <input value={!OBJECTIVES.includes(analysis.weeklyObjective) ? analysis.weeklyObjective : ''} onChange={e => upd({ weeklyObjective: e.target.value })} placeholder="Or type a custom objective…" style={{ ...INP, width: 280 }} />
+    <div style={{ fontFamily: FF }}>
+      <div style={{ marginBottom: 24 }}>
+        <h2 style={{ margin: '0 0 6px', fontSize: 22, fontWeight: 800, color: TX }}>Strategy</h2>
+        <p style={{ margin: 0, fontSize: 14, color: MI }}>Generate a content strategy from your analysis.</p>
       </div>
-      <AIBlock title="Generate Format Rules" desc="Best format type, hook type, ideal length, and visual style based on your brand and strategy." onRun={() => run('formatRules', formatP)} loading={!!loadingMap.formatRules} output={analysis.formatRules} hasKey={hasKey} />
-      <AIBlock title="Generate Execution Rules" desc="Posting frequency, content mix, tone guidance, and CTA style derived from your client's data." onRun={() => run('executionRules', execP)} loading={!!loadingMap.executionRules} output={analysis.executionRules} hasKey={hasKey} />
+
+      {!hasKey && (
+        <div style={{ padding: '14px 18px', borderRadius: 12, background: `${PU}12`, border: `1px solid ${PU}30`, color: PU, fontSize: 13, fontWeight: 600, marginBottom: 20 }}>
+          Add your Anthropic API key in Settings to generate strategy.
+        </div>
+      )}
+
+      {/* No analysis warning */}
+      {!analysis && (
+        <div style={{ background: CARD, borderRadius: 14, padding: '24px 24px', border: `1px solid ${BD}`, boxShadow: '0 1px 8px rgba(0,0,0,0.05)', marginBottom: 20 }}>
+          <div style={{ fontSize: 16, fontWeight: 700, color: TX, marginBottom: 8, fontFamily: FF }}>Run Analysis first</div>
+          <p style={{ margin: '0 0 16px', fontSize: 13, color: MI, fontFamily: FF, lineHeight: 1.6 }}>
+            Strategy is generated from your Analysis results. Complete the Analysis tab first.
+          </p>
+          {onGoToAnalysis && (
+            <button onClick={onGoToAnalysis} style={{ padding: '10px 22px', borderRadius: 10, border: 'none', background: OR, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: FF }}>
+              Go to Analysis →
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Generate button */}
+      {hasKey && analysis && (
+        <button
+          onClick={runStrategy}
+          disabled={loading}
+          style={{ padding: '12px 32px', borderRadius: 11, border: 'none', background: loading ? '#ccc' : OR, color: '#fff', fontSize: 15, fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', fontFamily: FF, marginBottom: 28, display: 'flex', alignItems: 'center', gap: 10, boxShadow: loading ? 'none' : `0 4px 16px ${OR}40` }}
+        >
+          {loading && <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" style={{ animation: 'spin 1s linear infinite' }}><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>}
+          {loading ? 'Generating…' : strategy ? 'Regenerate Strategy' : 'Generate Strategy'}
+        </button>
+      )}
+
+      {/* Strategy output */}
+      {strategy && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 28 }}>
+
+          {/* Content Pillars */}
+          {strategy.pillars?.length > 0 && (
+            <div style={{ background: CARD, borderRadius: 14, padding: '18px 20px', border: `1px solid ${BD}`, borderLeft: `4px solid ${PU}`, boxShadow: '0 1px 8px rgba(0,0,0,0.05)' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: MI, textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 14, fontFamily: FF }}>Content Pillars</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {strategy.pillars.map((p, i) => (
+                  <div key={i} style={{ padding: '12px 14px', borderRadius: 10, background: BG, border: `1px solid ${BD}` }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: TX, fontFamily: FF, marginBottom: 4 }}>{p.name}</div>
+                    <div style={{ fontSize: 13, color: MI, fontFamily: FF, lineHeight: 1.5 }}>{p.description}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <ListCard title="Hooks That Work"    items={strategy.hooks}            accent={OR} />
+
+          {/* Posting Plan */}
+          {strategy.postingPlan && (
+            <div style={{ background: CARD, borderRadius: 14, padding: '18px 20px', border: `1px solid ${BD}`, borderLeft: `4px solid #16A34A`, boxShadow: '0 1px 8px rgba(0,0,0,0.05)' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: MI, textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 14, fontFamily: FF }}>Weekly Posting Plan</div>
+              <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+                {[
+                  { label: 'Reels',   value: strategy.postingPlan.reels },
+                  { label: 'Posts',   value: strategy.postingPlan.posts },
+                  { label: 'Stories', value: strategy.postingPlan.stories },
+                ].map(({ label, value }) => (
+                  <div key={label} style={{ flex: '1 1 80px', textAlign: 'center', padding: '14px 10px', borderRadius: 12, background: BG, border: `1px solid ${BD}` }}>
+                    <div style={{ fontSize: 28, fontWeight: 800, color: OR, fontFamily: FF }}>{value ?? '—'}</div>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: MI, fontFamily: FF, marginTop: 4 }}>{label}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <ListCard title="Content Direction" items={strategy.contentDirection} accent={OR} />
+          <ListCard title="CTA Style"          items={strategy.ctaStyle}         accent={PU} />
+
+          {strategy.weeklyFocus && (
+            <div style={{ background: OR, borderRadius: 14, padding: '18px 20px', boxShadow: `0 4px 16px ${OR}40` }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.8)', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 8, fontFamily: FF }}>Weekly Focus</div>
+              <p style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#fff', fontFamily: FF, lineHeight: 1.5 }}>{strategy.weeklyFocus}</p>
+            </div>
+          )}
+
+          {onGoToCreate && (
+            <button
+              onClick={onGoToCreate}
+              style={{ alignSelf: 'flex-start', marginTop: 8, padding: '12px 28px', borderRadius: 11, border: 'none', background: OR, color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: FF, boxShadow: `0 4px 16px ${OR}40` }}
+            >
+              Go to Create →
+            </button>
+          )}
+        </div>
+      )}
+
+      <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
     </div>
   )
 }

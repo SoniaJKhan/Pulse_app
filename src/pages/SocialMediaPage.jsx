@@ -205,8 +205,8 @@ export default function SocialMediaPage() {
               {activeTab === 'brandkit'    && <BrandKitTab open={true} onClose={() => setActiveTab('client')} clientId={selectedId} />}
               {activeTab === 'audit'       && <AuditTab clientId={selectedId} pushToast={pushToast} />}
               {activeTab === 'competitors' && <CompetitorsTab clientId={selectedId} pushToast={pushToast} onAdvance={() => setActiveTab('analysis')} />}
-              {activeTab === 'analysis'    && <AnalysisTab analysis={analysis} upd={updAnalysis} clientId={selectedId} client={client} content={content} addContent={addContent} pushToast={pushToast} onGoToCalendar={goToPublish} />}
-              {activeTab === 'strategy'    && <StrategyTab analysis={analysis} upd={updAnalysis} pushToast={pushToast} />}
+              {activeTab === 'analysis'    && <AnalysisTab clientId={selectedId} pushToast={pushToast} onGoToStrategy={() => setActiveTab('strategy')} onGoToAudit={() => setActiveTab('audit')} onGoToCompetitors={() => setActiveTab('competitors')} />}
+              {activeTab === 'strategy'    && <StrategyTab clientId={selectedId} pushToast={pushToast} onGoToCreate={() => setActiveTab('create')} onGoToAnalysis={() => setActiveTab('analysis')} />}
               {activeTab === 'create'      && <CreateTab client={client} content={content} addContent={addContent} onOpenNewPost={() => setShowNewPost(true)} onOpenIntelligence={openIntelligence} pushToast={pushToast} />}
               {activeTab === 'publish'     && <PublishTab clientId={selectedId} clients={clients} content={content} updateContent={updateContent} pushToast={pushToast} />}
               {activeTab === 'report'      && <ReportTab analysis={analysis} upd={updAnalysis} clientId={selectedId} addContent={addContent} pushToast={pushToast} onGoToCalendar={goToPublish} />}
