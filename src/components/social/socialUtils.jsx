@@ -47,8 +47,23 @@ export const defAnalysis = () => ({
 })
 export const loadAnalysis = cid => { try { const r = localStorage.getItem(`pulse_analysis_${cid}`); return r ? JSON.parse(r) : defAnalysis() } catch { return defAnalysis() } }
 export const saveAnalysis = (cid, d) => { try { localStorage.setItem(`pulse_analysis_${cid}`, JSON.stringify(d)) } catch {} }
-export const loadBrandKit = cid => { try { return JSON.parse(localStorage.getItem(`pulse_brand_kit_${cid}`) || '{}') } catch { return {} } }
-export const saveBrandKit = (cid, d) => { try { localStorage.setItem(`pulse_brand_kit_${cid}`, JSON.stringify(d)) } catch {} }
+export const loadBrandKit = cid => {
+  try {
+    const newKey = `pulse_brand_${cid}`
+    const stored = localStorage.getItem(newKey)
+    if (stored) return JSON.parse(stored)
+    // migrate from old key
+    const oldStored = localStorage.getItem(`pulse_brand_kit_${cid}`)
+    if (oldStored) {
+      const data = JSON.parse(oldStored)
+      localStorage.setItem(newKey, JSON.stringify(data))
+      localStorage.removeItem(`pulse_brand_kit_${cid}`)
+      return data
+    }
+    return {}
+  } catch { return {} }
+}
+export const saveBrandKit = (cid, d) => { try { localStorage.setItem(`pulse_brand_${cid}`, JSON.stringify(d)) } catch {} }
 
 export function getStoredPlan(cid) {
   try { const r = localStorage.getItem('pulse_client_intelligence'); return r ? (JSON.parse(r)[cid]?.aiOutputs?.weeklyPlan || []) : [] } catch { return [] }

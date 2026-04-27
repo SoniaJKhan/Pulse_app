@@ -97,9 +97,9 @@ export default function SocialMediaPage() {
   const handleDeleteClient = useCallback((c) => {
     const displayName = c.name || c.businessName || 'Client'
     if (!window.confirm(`Delete ${displayName}? This cannot be undone.`)) return
-    const stored = (() => { try { return JSON.parse(localStorage.getItem('pulse_clients') || '[]') } catch { return [] } })()
-    localStorage.setItem('pulse_clients', JSON.stringify(stored.filter(x => x.id !== c.id)))
-    ;['pulse_brandkit_', 'pulse_audit_', 'pulse_competitors_', 'pulse_analysis_', 'pulse_strategy_', 'pulse_calendar_'].forEach(prefix => localStorage.removeItem(prefix + c.id))
+    const stored = (() => { try { return JSON.parse(localStorage.getItem('pulse_clients_v2') || '[]') } catch { return [] } })()
+    localStorage.setItem('pulse_clients_v2', JSON.stringify(stored.filter(x => x.id !== c.id)))
+    ;['pulse_brand_', 'pulse_brand_kit_', 'pulse_audit_', 'pulse_competitors_', 'pulse_analysis_', 'pulse_strategy_', 'pulse_calendar_'].forEach(prefix => localStorage.removeItem(prefix + c.id))
     window.dispatchEvent(new Event('pulse_clients_updated'))
     if (selectedId === c.id) {
       const remaining = stored.filter(x => x.id !== c.id)

@@ -104,7 +104,7 @@ function generateBrief(bizName, bizType, platform, contentType, goal, keyMessage
 // ─── Brand Kit ────────────────────────────────────────────────────────────────
 
 function BrandKit({ clientId }) {
-  const storageKey = `pulse_brand_kit_${clientId}`
+  const storageKey = `pulse_brand_${clientId}`
   const [kit, setKit] = useState(() => {
     try { return JSON.parse(localStorage.getItem(storageKey)) || {} } catch { return {} }
   })

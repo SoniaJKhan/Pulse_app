@@ -8,7 +8,7 @@ const PLAT_COL = { Instagram: '#E1306C', TikTok: '#69C9D0', YouTube: '#FF0000', 
 function completionScore(clientId) {
   let score = 0
   try {
-    const bk = JSON.parse(localStorage.getItem(`pulse_brand_kit_${clientId}`) || '{}')
+    const bk = JSON.parse(localStorage.getItem(`pulse_brand_${clientId}`) || '{}')
     if (bk.colors?.length || bk.voice || bk.topics?.length) score++
   } catch {}
   try {
