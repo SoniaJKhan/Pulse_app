@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
-import { useClients } from '../hooks/useClients'
 import { useSocialData } from '../hooks/useSocialData'
 import {
-  BG, CARD, PU, PL, MI, BD, TX,
-  defAnalysis, loadAnalysis, saveAnalysis, preFillIntelligence,
+  BG, CARD, PU, PL, MI, BD, TX, R, SH,
+  defAnalysis, loadAnalysis, saveAnalysis, loadBrandKit, preFillIntelligence,
   useToast, ToastBox, APIKeyModal,
   thisMonth,
 } from '../components/social/socialUtils.jsx'
@@ -33,20 +32,50 @@ const TABS = [
   { id: 'report',      label: 'Report' },
 ]
 
+function readClients() {
+  try { return JSON.parse(localStorage.getItem('pulse_clients') || '[]') } catch { return [] }
+}
+
+function getCompletion(clientId) {
+  const analysis = (() => { try { return JSON.parse(localStorage.getItem(`pulse_analysis_${clientId}`) || '{}') } catch { return {} } })()
+  const brandKit = loadBrandKit(clientId)
+  return {
+    'Brand Kit':   !!(brandKit.colors?.length || brandKit.voice || brandKit.topics?.length),
+    'Audit':       !!(analysis.contentAudit?.length),
+    'Competitors': !!(analysis.competitors?.length),
+    'Analysis':    !!(analysis.contentResult),
+    'Strategy':    !!(analysis.strategyResult),
+  }
+}
+
 export default function SocialMediaPage() {
-  const { clients } = useClients()
   const { content, metrics, addContent, updateContent } = useSocialData()
   const { toasts, push: pushToast } = useToast()
 
+  const [clients,          setClients]         = useState(readClients)
   const [selectedId,       setSelectedId]       = useState(null)
   const [activeTab,        setActiveTab]         = useState('client')
+  const [clientFormKey,    setClientFormKey]     = useState(0)
+  const [profileClient,    setProfileClient]     = useState(null)
   const [showNewPost,      setShowNewPost]       = useState(false)
   const [showIntelligence, setShowIntelligence] = useState(false)
   const [showCreateMenu,   setShowCreateMenu]    = useState(false)
   const [showKeyModal,     setShowKeyModal]      = useState(false)
 
-  const activeClients = useMemo(() => clients.filter(c => c.status !== 'Churned'), [clients])
-  const client        = useMemo(() => clients.find(c => c.id === selectedId) || null, [clients, selectedId])
+  const client = useMemo(() => clients.find(c => c.id === selectedId) || null, [clients, selectedId])
+
+  const refreshClients = useCallback(() => setClients(readClients()), [])
+
+  const handleClientSaved = useCallback((newClient) => {
+    refreshClients()
+    setSelectedId(newClient.id)
+  }, [refreshClients])
+
+  const handleAddNew = () => {
+    setClientFormKey(k => k + 1)
+    setActiveTab('client')
+    setSelectedId(null)
+  }
 
   const [analysis, setAnalysis] = useState(defAnalysis)
   useEffect(() => {
@@ -115,7 +144,13 @@ export default function SocialMediaPage() {
           </div>
         </div>
 
-        <SocialClientBar activeClients={activeClients} selectedId={selectedId} onSelect={setSelectedId} />
+        <SocialClientBar
+          clients={clients}
+          selectedId={selectedId}
+          onSelect={setSelectedId}
+          onAddNew={handleAddNew}
+          onProfileClick={setProfileClient}
+        />
 
         {selectedId && (
           <SocialClientPanel
@@ -131,10 +166,10 @@ export default function SocialMediaPage() {
 
       {/* Tab content */}
       <div style={{ padding: '28px 32px 60px', maxWidth: 1280 }}>
-        {!selectedId
+        {!selectedId && activeTab !== 'client'
           ? <SocialWelcome />
           : <>
-              {activeTab === 'client'      && <ClientTab clientId={selectedId} client={client} />}
+              {activeTab === 'client'      && <ClientTab key={clientFormKey} onClientSaved={handleClientSaved} pushToast={pushToast} />}
               {activeTab === 'brandkit'    && <BrandKitTab open={true} onClose={() => setActiveTab('client')} clientId={selectedId} />}
               {activeTab === 'audit'       && <AuditTab analysis={analysis} upd={updAnalysis} client={client} pushToast={pushToast} />}
               {activeTab === 'competitors' && <CompetitorsTab analysis={analysis} upd={updAnalysis} pushToast={pushToast} />}
@@ -146,6 +181,9 @@ export default function SocialMediaPage() {
             </>}
       </div>
 
+      {/* Client profile modal */}
+      {profileClient && <ClientProfileModal client={profileClient} onClose={() => setProfileClient(null)} onSelectTab={(tab) => { setSelectedId(profileClient.id); setActiveTab(tab); setProfileClient(null) }} />}
+
       {/* Drawers & overlays */}
       <NewPostDrawer open={showNewPost} onClose={() => setShowNewPost(false)} clientId={selectedId} addContent={addContent} pushToast={pushToast} />
       <IntelligenceOverlay open={showIntelligence} onClose={() => setShowIntelligence(false)} clientId={selectedId} client={client} addContent={addContent} pushToast={pushToast} />
@@ -156,6 +194,88 @@ export default function SocialMediaPage() {
         @keyframes tsIn { from { opacity:0; transform:translateY(8px) } to { opacity:1; transform:translateY(0) } }
         @keyframes spin  { to { transform:rotate(360deg) } }
       `}</style>
+    </div>
+  )
+}
+
+function ClientProfileModal({ client, onClose, onSelectTab }) {
+  const displayName = client.name || client.businessName || 'Client'
+  const initials    = displayName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+  const completion  = getCompletion(client.id)
+  const steps       = ['Brand Kit', 'Audit', 'Competitors', 'Analysis', 'Strategy']
+  const TAB_MAP     = { 'Brand Kit': 'brandkit', 'Audit': 'audit', 'Competitors': 'competitors', 'Analysis': 'analysis', 'Strategy': 'strategy' }
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 300, display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-end' }}>
+      <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.4)' }} onClick={onClose} />
+      <div style={{ position: 'relative', width: 380, maxWidth: '95vw', height: '100vh', background: CARD, overflowY: 'auto', padding: '32px 28px', boxShadow: '-8px 0 40px rgba(0,0,0,0.25)', display: 'flex', flexDirection: 'column', gap: 0 }}>
+
+        {/* Close */}
+        <button onClick={onClose} style={{ position: 'absolute', top: 18, right: 18, background: 'none', border: 'none', cursor: 'pointer', color: MI, fontSize: 20, lineHeight: 1, padding: 4 }}>✕</button>
+
+        {/* Avatar + name */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 28, paddingTop: 8 }}>
+          <div style={{ width: 80, height: 80, borderRadius: '50%', background: `${PU}20`, border: `3px solid ${BD}`, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>
+            {client.profilePhoto
+              ? <img src={client.profilePhoto} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { e.target.style.display = 'none' }} />
+              : <span style={{ fontSize: 28, fontWeight: 800, color: PL, fontFamily: "'Outfit',sans-serif" }}>{initials}</span>}
+          </div>
+          <div style={{ fontSize: 18, fontWeight: 800, color: TX, fontFamily: "'Outfit',sans-serif", textAlign: 'center' }}>{displayName}</div>
+          {client.businessType && <div style={{ fontSize: 13, color: MI, fontFamily: "'Outfit',sans-serif", marginTop: 3 }}>{client.businessType}</div>}
+        </div>
+
+        {/* Details */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 28 }}>
+          {client.platforms?.length > 0 && (
+            <ProfileRow label="Platforms">
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {client.platforms.map(p => (
+                  <span key={p} style={{ padding: '3px 10px', borderRadius: 20, background: `${PU}15`, color: PL, fontSize: 12, fontWeight: 600, fontFamily: "'Outfit',sans-serif" }}>
+                    {p}{client.handles?.[p] ? ` · ${client.handles[p]}` : ''}
+                  </span>
+                ))}
+              </div>
+            </ProfileRow>
+          )}
+          {client.contentGoal && <ProfileRow label="Content Goal"><span style={{ fontSize: 13, color: TX, fontFamily: "'Outfit',sans-serif" }}>{client.contentGoal}</span></ProfileRow>}
+          {client.postingFrequency && <ProfileRow label="Posting Frequency"><span style={{ fontSize: 13, color: TX, fontFamily: "'Outfit',sans-serif" }}>{client.postingFrequency}</span></ProfileRow>}
+          {client.primaryObjective && <ProfileRow label="Primary Objective"><span style={{ fontSize: 13, color: TX, fontFamily: "'Outfit',sans-serif", lineHeight: 1.5 }}>{client.primaryObjective}</span></ProfileRow>}
+        </div>
+
+        {/* Completion checklist */}
+        <div style={{ background: BG, borderRadius: 12, padding: '16px 18px', border: `1px solid ${BD}` }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: MI, textTransform: 'uppercase', letterSpacing: '.06em', fontFamily: "'Outfit',sans-serif", marginBottom: 14 }}>Setup Progress</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {steps.map(step => {
+              const done = completion[step]
+              return (
+                <div key={step} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ width: 20, height: 20, borderRadius: '50%', background: done ? '#4A7C5C' : `${BD}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      {done && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>}
+                    </div>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: done ? TX : MI, fontFamily: "'Outfit',sans-serif" }}>{step}</span>
+                  </div>
+                  {!done && (
+                    <button onClick={() => onSelectTab(TAB_MAP[step])} style={{ fontSize: 11, fontWeight: 700, color: PL, background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'Outfit',sans-serif', padding: 0" }}>
+                      Set up →
+                    </button>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function ProfileRow({ label, children }) {
+  return (
+    <div>
+      <div style={{ fontSize: 11, fontWeight: 700, color: MI, textTransform: 'uppercase', letterSpacing: '.06em', fontFamily: "'Outfit',sans-serif", marginBottom: 5 }}>{label}</div>
+      {children}
     </div>
   )
 }
