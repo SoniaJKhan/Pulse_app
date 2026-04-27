@@ -6,7 +6,7 @@ const EMPTY = {
   contentGoal: '', postingFrequency: '', primaryObjective: '',
 }
 
-export default function ClientTab({ onClientSaved, pushToast }) {
+export default function ClientTab({ saveClient, onClientSaved, pushToast }) {
   const [form, setForm]         = useState(EMPTY)
   const [photo, setPhoto]       = useState(null)
   const [igHandle, setIgHandle] = useState('')
@@ -39,7 +39,6 @@ export default function ClientTab({ onClientSaved, pushToast }) {
 
   const save = () => {
     if (!form.clientName.trim()) { pushToast?.('Client name is required', 'error'); return }
-    const existing = (() => { try { return JSON.parse(localStorage.getItem('pulse_clients') || '[]') } catch { return [] } })()
     const client = {
       id: Date.now(),
       name: form.clientName.trim(),
@@ -54,7 +53,7 @@ export default function ClientTab({ onClientSaved, pushToast }) {
       brandKit: null, audit: null, competitors: null, analysis: null, strategy: null,
       createdAt: new Date().toISOString(),
     }
-    localStorage.setItem('pulse_clients', JSON.stringify([...existing, client]))
+    saveClient?.(client)
     onClientSaved?.(client)
     setSaved(true)
     pushToast?.('Client saved successfully')

@@ -1,7 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
-import { clients as seedClients } from '../data/mockData'
-
-const STORAGE_KEY = 'pulse_clients_v2'
+import { useState, useEffect } from 'react'
 
 export function generateChecklist() {
   const due = new Date()
@@ -29,68 +26,39 @@ export function generateChecklist() {
 export function useClients() {
   const [clients, setClients] = useState(() => {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY)
-      return stored ? JSON.parse(stored) : seedClients
-    } catch {
-      return seedClients
-    }
+      return JSON.parse(localStorage.getItem('pulse_clients')) || []
+    } catch { return [] }
   })
 
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(clients))
-  }, [clients])
-
-  const addClient = useCallback((data) => {
-    const id = `c-${Date.now().toString(36)}`
-    const newClient = {
-      id,
-      businessName: data.businessName,
-      ownerName: data.ownerName,
-      email: data.email,
-      phone: data.phone,
-      country: data.country,
-      businessType: data.businessType,
-      bookingPlatform: data.bookingPlatform,
-      package: data.package,
-      status: 'Onboarding',
-      healthScore: 5,
-      monthlyMemberCount: parseInt(data.monthlyMemberCount) || 0,
-      startDate: data.startDate,
-      lastReportDate: null,
-      nextReportDue: null,
-      nextQuarterlyReview: null,
-      notes: data.notes || '',
-      checklist: generateChecklist(),
+  const saveClient = (client) => {
+    const existing = JSON.parse(localStorage.getItem('pulse_clients')) || []
+    const index = existing.findIndex(c => c.id === client.id)
+    if (index > -1) {
+      existing[index] = client
+    } else {
+      existing.push(client)
     }
-    setClients(prev => [newClient, ...prev])
-    return id
+    localStorage.setItem('pulse_clients', JSON.stringify(existing))
+    setClients([...existing])
+    window.dispatchEvent(new Event('pulse_clients_updated'))
+  }
+
+  const deleteClient = (id) => {
+    const updated = clients.filter(c => c.id !== id)
+    localStorage.setItem('pulse_clients', JSON.stringify(updated))
+    setClients(updated)
+    window.dispatchEvent(new Event('pulse_clients_updated'))
+  }
+
+  useEffect(() => {
+    const sync = () => {
+      try {
+        setClients(JSON.parse(localStorage.getItem('pulse_clients')) || [])
+      } catch {}
+    }
+    window.addEventListener('pulse_clients_updated', sync)
+    return () => window.removeEventListener('pulse_clients_updated', sync)
   }, [])
 
-  const updateClient = useCallback((id, changes) => {
-    setClients(prev =>
-      prev.map(c => (c.id === id ? { ...c, ...changes } : c))
-    )
-  }, [])
-
-  const toggleChecklistItem = useCallback((clientId, itemId) => {
-    setClients(prev =>
-      prev.map(c => {
-        if (c.id !== clientId) return c
-        return {
-          ...c,
-          checklist: c.checklist.map(item => {
-            if (item.id !== itemId) return item
-            const completed = !item.completed
-            return {
-              ...item,
-              completed,
-              completedAt: completed ? new Date().toISOString().split('T')[0] : null,
-            }
-          }),
-        }
-      })
-    )
-  }, [])
-
-  return { clients, addClient, updateClient, toggleChecklistItem }
+  return { clients, saveClient, deleteClient }
 }

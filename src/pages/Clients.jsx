@@ -1,7 +1,25 @@
 import React, { useState, useMemo } from 'react'
-import { useClients } from '../hooks/useClients'
+import { useClients, generateChecklist } from '../hooks/useClients'
 import AddClientDrawer from '../components/AddClientDrawer'
 import ClientProfile from './ClientProfile'
+
+const PLAT_COL = { Instagram: '#E1306C', TikTok: '#69C9D0', YouTube: '#FF0000', LinkedIn: '#0A66C2', Facebook: '#1877F2' }
+
+function completionScore(clientId) {
+  let score = 0
+  try {
+    const bk = JSON.parse(localStorage.getItem(`pulse_brand_kit_${clientId}`) || '{}')
+    if (bk.colors?.length || bk.voice || bk.topics?.length) score++
+  } catch {}
+  try {
+    const an = JSON.parse(localStorage.getItem(`pulse_analysis_${clientId}`) || '{}')
+    if (an.contentAudit?.length) score++
+    if (an.competitors?.length) score++
+    if (an.contentResult) score++
+    if (an.strategyResult) score++
+  } catch {}
+  return score
+}
 
 const STATUS_OPTIONS  = ['All', 'Active', 'Onboarding', 'Paused', 'Churned']
 const PACKAGE_OPTIONS = ['All', 'Starter', 'Growth', 'Full Service', 'Custom']
@@ -48,11 +66,14 @@ function healthDotColor(score) {
 }
 
 function ClientCard({ client, onClick }) {
-  const st = STATUS_STYLE[client.status] || STATUS_STYLE.Active
-  const services = PACKAGE_SERVICES[client.package] || ['Social Media']
-  const emoji = BIZ_EMOJI[client.businessType] || '✨'
+  const st       = STATUS_STYLE[client.status] || STATUS_STYLE.Active
+  const services = PACKAGE_SERVICES[client.package] || []
+  const emoji    = BIZ_EMOJI[client.businessType] || '✨'
   const gradient = BIZ_GRADIENT[client.businessType] || 'linear-gradient(135deg, #C4874A 0%, #8A5A2A 100%)'
-  const dotColor = healthDotColor(client.healthScore)
+  const name     = client.name || client.businessName || 'Client'
+  const initials = name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+  const score    = completionScore(client.id)
+  const scoreColor = score >= 4 ? '#4A7C5C' : score >= 2 ? '#C4874A' : '#C4503A'
   const [hovered, setHovered] = useState(false)
 
   return (
@@ -67,41 +88,67 @@ function ClientCard({ client, onClick }) {
       onMouseLeave={() => setHovered(false)}
     >
       {/* Thumbnail */}
-      <div style={{ ...c.thumb, background: gradient }}>
-        <span style={c.emoji}>{emoji}</span>
-        <div style={{ ...c.healthDot, background: dotColor }} title={`Health: ${client.healthScore}/10`} />
+      <div style={{ ...c.thumb, background: client.profilePhoto ? '#f0f0f0' : gradient, position: 'relative' }}>
+        {client.profilePhoto
+          ? <img src={client.profilePhoto} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0 }} onError={e => { e.target.style.display = 'none' }} />
+          : client.status
+            ? <span style={c.emoji}>{emoji}</span>
+            : <span style={{ fontSize: 28, fontWeight: 800, color: '#fff', fontFamily: "'Outfit',sans-serif" }}>{initials}</span>}
+        <div style={{ position: 'absolute', bottom: 8, right: 8, fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 10, background: scoreColor, color: '#fff', fontFamily: "'Outfit',sans-serif" }}>
+          {score}/5
+        </div>
       </div>
 
       {/* Card body */}
       <div style={c.body}>
-        <h3 style={c.bizName}>{client.businessName}</h3>
-        <p style={c.ownerName}>{client.ownerName}</p>
+        <h3 style={c.bizName}>{name}</h3>
+        {client.ownerName && <p style={c.ownerName}>{client.ownerName}</p>}
         <p style={c.bizType}>
-          {client.businessType}
+          {client.businessType || '—'}
           {client.country && <span style={{ color: 'var(--mid-grey)', opacity: 0.7 }}> · {client.country}</span>}
         </p>
 
-        {/* Service tags */}
-        <div style={c.tags}>
-          {services.map(svc => {
-            const ss = SERVICE_STYLE[svc]
-            return (
-              <span key={svc} style={{ ...c.tag, background: ss.bg, color: ss.color }}>
-                {ss.label}
-              </span>
-            )
-          })}
-        </div>
-
-        {/* Status */}
-        <div style={c.footer}>
-          <div style={{ ...c.statusBadge, background: st.bg, color: st.color }}>
-            <span style={{ ...c.statusDot, background: st.dot }} />
-            {client.status}
+        {/* Platforms */}
+        {client.platforms?.length > 0 && (
+          <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginTop: 6 }}>
+            {client.platforms.map(p => (
+              <span key={p} style={{ width: 8, height: 8, borderRadius: '50%', background: PLAT_COL[p] || '#aaa', display: 'inline-block' }} title={p} />
+            ))}
           </div>
-          {client.monthlyMemberCount > 0 && (
-            <span style={c.memberCount}>{client.monthlyMemberCount.toLocaleString()} members</span>
+        )}
+
+        {/* Service tags */}
+        {services.length > 0 && (
+          <div style={c.tags}>
+            {services.map(svc => {
+              const ss = SERVICE_STYLE[svc]
+              return (
+                <span key={svc} style={{ ...c.tag, background: ss.bg, color: ss.color }}>
+                  {ss.label}
+                </span>
+              )
+            })}
+          </div>
+        )}
+
+        {/* Footer */}
+        <div style={c.footer}>
+          {client.status ? (
+            <div style={{ ...c.statusBadge, background: st.bg, color: st.color }}>
+              <span style={{ ...c.statusDot, background: st.dot }} />
+              {client.status}
+            </div>
+          ) : (
+            <span style={{ fontSize: 11, color: 'var(--mid-grey)', fontFamily: "'Outfit',sans-serif" }}>
+              {client.package || 'Social Media'}
+            </span>
           )}
+          <button
+            onClick={e => { e.stopPropagation(); onClick() }}
+            style={{ fontSize: 11, fontWeight: 600, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: "'Outfit',sans-serif" }}
+          >
+            Open Profile →
+          </button>
         </div>
       </div>
     </div>
@@ -109,8 +156,54 @@ function ClientCard({ client, onClick }) {
 }
 
 export default function Clients({ initialClientId, initialTab, onClearInitial }) {
-  const { clients, addClient, updateClient, toggleChecklistItem } = useClients()
+  const { clients, saveClient, deleteClient } = useClients()
   const [selectedId, setSelectedId] = useState(initialClientId || null)
+
+  const addCrmClient = (data) => {
+    const id = `c-${Date.now().toString(36)}`
+    const newClient = {
+      id,
+      name: data.businessName,
+      businessName: data.businessName,
+      ownerName: data.ownerName,
+      email: data.email,
+      phone: data.phone,
+      country: data.country,
+      businessType: data.businessType,
+      bookingPlatform: data.bookingPlatform,
+      package: data.package,
+      status: 'Onboarding',
+      healthScore: 5,
+      monthlyMemberCount: parseInt(data.monthlyMemberCount) || 0,
+      startDate: data.startDate,
+      lastReportDate: null,
+      nextReportDue: null,
+      nextQuarterlyReview: null,
+      notes: data.notes || '',
+      checklist: generateChecklist(),
+      createdAt: new Date().toISOString(),
+    }
+    saveClient(newClient)
+    return id
+  }
+
+  const updateClient = (id, changes) => {
+    const existing = clients.find(c => c.id === id)
+    if (existing) saveClient({ ...existing, ...changes })
+  }
+
+  const toggleChecklistItem = (clientId, itemId) => {
+    const existing = clients.find(c => c.id === clientId)
+    if (!existing) return
+    saveClient({
+      ...existing,
+      checklist: (existing.checklist || []).map(item => {
+        if (item.id !== itemId) return item
+        const completed = !item.completed
+        return { ...item, completed, completedAt: completed ? new Date().toISOString().split('T')[0] : null }
+      }),
+    })
+  }
   const [showDrawer, setShowDrawer] = useState(false)
   const [search, setSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState('All')
@@ -249,7 +342,7 @@ export default function Clients({ initialClientId, initialTab, onClearInitial })
       {showDrawer && (
         <AddClientDrawer
           onClose={() => setShowDrawer(false)}
-          onAdd={data => { addClient(data); setShowDrawer(false) }}
+          onAdd={data => { addCrmClient(data); setShowDrawer(false) }}
         />
       )}
     </div>

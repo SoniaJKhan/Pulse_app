@@ -122,14 +122,21 @@ export default function Dashboard({ onViewAlerts, onGoToClient, onNavigate }) {
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
   const greetEmoji = hour < 12 ? '☀️' : hour < 17 ? '🌤️' : '🌙'
 
-  const activeClients = useMemo(() => clients.filter(c => c.status !== 'Churned'), [clients])
   const tasksDueToday = useMemo(() => tasks.filter(t => t.due === todayStr && t.status !== 'done'), [tasks, todayStr])
   const unresolvedAlerts = useMemo(() => alerts.filter(a => !a.resolved), [alerts])
 
   // Stat card data
+  const totalClients   = clients.length
   const postsScheduled = useMemo(() => content.filter(c => c.status === 'Scheduled').length, [content])
-  const newLeads = useMemo(() => clients.filter(c => c.status === 'Active' || c.status === 'Prospect').length, [clients])
   const pendingApprovals = useMemo(() => content.filter(c => c.status === 'Pending Approval').length, [content])
+
+  // Recent clients: last 3 by createdAt
+  const recentClients = useMemo(() =>
+    [...clients]
+      .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''))
+      .slice(0, 3),
+    [clients]
+  )
   const messagesCount = unresolvedAlerts.length
 
   // Upcoming content (next 6 posts)
@@ -245,8 +252,8 @@ export default function Dashboard({ onViewAlerts, onGoToClient, onNavigate }) {
         {/* Stat cards */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16, marginBottom: 28 }}>
           <StatCard
-            label="New Leads"
-            value={newLeads}
+            label="Total Clients"
+            value={totalClients}
             iconBg="rgba(245,114,42,0.12)"
             waveColor={OR}
             change={null}
@@ -436,6 +443,48 @@ export default function Dashboard({ onViewAlerts, onGoToClient, onNavigate }) {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Recent Clients */}
+        <div style={{ marginBottom: 28 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+            <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: TX, fontFamily: FF }}>Recent Clients</h2>
+            <button onClick={() => onNavigate && onNavigate('clients')} style={{ background: 'none', border: 'none', color: OR, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: FF }}>View All →</button>
+          </div>
+          {recentClients.length === 0 ? (
+            <div style={{ background: CARD, borderRadius: R, padding: '28px 24px', textAlign: 'center', border: `1px solid ${BD}` }}>
+              <div style={{ fontSize: 32, marginBottom: 10 }}>👥</div>
+              <p style={{ margin: 0, fontSize: 14, color: MI, fontFamily: FF }}>No clients yet — add your first one in Social Media or Client Management.</p>
+            </div>
+          ) : (
+            <div style={{ background: CARD, borderRadius: R, border: `1px solid ${BD}`, boxShadow: SH, overflow: 'hidden' }}>
+              {recentClients.map((c, i) => {
+                const name     = c.name || c.businessName || 'Client'
+                const initials = name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+                return (
+                  <div
+                    key={c.id}
+                    onClick={() => onNavigate && onNavigate('clients')}
+                    style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '13px 18px', borderBottom: i < recentClients.length - 1 ? `1px solid ${BD}` : 'none', cursor: 'pointer' }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                  >
+                    <div style={{ width: 38, height: 38, borderRadius: '50%', background: `${OR}20`, color: OR, fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden' }}>
+                      {c.profilePhoto
+                        ? <img src={c.profilePhoto} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { e.target.style.display = 'none' }} />
+                        : initials}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13.5, fontWeight: 700, color: TX, fontFamily: FF, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</div>
+                      <div style={{ fontSize: 11.5, color: MI, fontFamily: FF, marginTop: 1 }}>{c.businessType || '—'}</div>
+                    </div>
+                    {c.package && <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 20, background: `${OR}15`, color: OR, fontFamily: FF, flexShrink: 0 }}>{c.package}</span>}
+                    {c.startDate && <span style={{ fontSize: 11, color: MI, fontFamily: FF, flexShrink: 0 }}>{fmtDate(c.startDate)}</span>}
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </div>
 
         {/* Tip strip */}

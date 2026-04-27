@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import { useClients } from '../hooks/useClients'
 
 const NAV_ITEMS = [
   { id: 'dashboard', label: 'Dashboard', emoji: '🏠' },
@@ -29,6 +30,7 @@ const QUOTES = [
 
 export default function Sidebar({ activePage, onNavigate, collapsed, onToggleCollapse, mobileOpen, onCloseMobile, alertBadge, messageBadge }) {
   const { user, logout } = useAuth()
+  const { clients } = useClients()
   const [hoveredId, setHoveredId] = useState(null)
   const quote = QUOTES[new Date().getDate() % QUOTES.length]
 
@@ -74,7 +76,7 @@ export default function Sidebar({ activePage, onNavigate, collapsed, onToggleCol
           {NAV_ITEMS.map(item => {
             const isActive = activePage === item.id
             const isHovered = hoveredId === item.id && !isActive
-            const badge = item.id === 'alerts' ? (alertBadge || 0) : item.id === 'messages' ? (messageBadge || 0) : 0
+            const badge = item.id === 'alerts' ? (alertBadge || 0) : item.id === 'messages' ? (messageBadge || 0) : item.id === 'clients' ? (clients.length || 0) : 0
             return (
               <button
                 key={item.id}
@@ -97,7 +99,7 @@ export default function Sidebar({ activePage, onNavigate, collapsed, onToggleCol
                     <span style={{ ...s.navLabel, color: isActive ? '#fff' : 'rgba(255,255,255,0.6)', fontWeight: isActive ? 700 : 500 }}>
                       {item.label}
                     </span>
-                    {badge > 0 && <span style={s.badge}>{badge}</span>}
+                    {badge > 0 && <span style={{ ...s.badge, background: item.id === 'clients' ? PU : '#C4503A' }}>{badge}</span>}
                   </>
                 )}
                 {collapsed && badge > 0 && <span style={s.badgeDot} />}

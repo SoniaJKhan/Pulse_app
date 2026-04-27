@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
+import { useClients } from '../hooks/useClients'
 import { useSocialData } from '../hooks/useSocialData'
 import {
   BG, CARD, PU, PL, MI, BD, TX, R, SH,
@@ -32,10 +33,6 @@ const TABS = [
   { id: 'report',      label: 'Report' },
 ]
 
-function readClients() {
-  try { return JSON.parse(localStorage.getItem('pulse_clients') || '[]') } catch { return [] }
-}
-
 function getCompletion(clientId) {
   const analysis = (() => { try { return JSON.parse(localStorage.getItem(`pulse_analysis_${clientId}`) || '{}') } catch { return {} } })()
   const brandKit = loadBrandKit(clientId)
@@ -49,10 +46,10 @@ function getCompletion(clientId) {
 }
 
 export default function SocialMediaPage() {
+  const { clients, saveClient } = useClients()
   const { content, metrics, addContent, updateContent } = useSocialData()
   const { toasts, push: pushToast } = useToast()
 
-  const [clients,          setClients]         = useState(readClients)
   const [selectedId,       setSelectedId]       = useState(null)
   const [activeTab,        setActiveTab]         = useState('client')
   const [clientFormKey,    setClientFormKey]     = useState(0)
@@ -64,12 +61,9 @@ export default function SocialMediaPage() {
 
   const client = useMemo(() => clients.find(c => c.id === selectedId) || null, [clients, selectedId])
 
-  const refreshClients = useCallback(() => setClients(readClients()), [])
-
   const handleClientSaved = useCallback((newClient) => {
-    refreshClients()
     setSelectedId(newClient.id)
-  }, [refreshClients])
+  }, [])
 
   const handleAddNew = () => {
     setClientFormKey(k => k + 1)
@@ -169,7 +163,7 @@ export default function SocialMediaPage() {
         {!selectedId && activeTab !== 'client'
           ? <SocialWelcome />
           : <>
-              {activeTab === 'client'      && <ClientTab key={clientFormKey} onClientSaved={handleClientSaved} pushToast={pushToast} />}
+              {activeTab === 'client'      && <ClientTab key={clientFormKey} saveClient={saveClient} onClientSaved={handleClientSaved} pushToast={pushToast} />}
               {activeTab === 'brandkit'    && <BrandKitTab open={true} onClose={() => setActiveTab('client')} clientId={selectedId} />}
               {activeTab === 'audit'       && <AuditTab analysis={analysis} upd={updAnalysis} client={client} pushToast={pushToast} />}
               {activeTab === 'competitors' && <CompetitorsTab analysis={analysis} upd={updAnalysis} pushToast={pushToast} />}
