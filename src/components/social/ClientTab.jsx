@@ -1,9 +1,47 @@
 import React, { useState } from 'react'
 import { BG, CARD, PU, PL, MI, BD, TX, R, SH, LBL, INP, PLATS } from './socialUtils.jsx'
 
+const BIZ_TYPES = [
+  'Yoga Studio', 'Pilates Studio', 'Gym', 'Spa', 'Wellness Clinic',
+  'Mindfulness Centre', 'Retreat Centre', 'Personal Training Studio',
+  'Nutrition Coaching', 'Beauty & Aesthetics', 'Dental Clinic',
+  'Chiropractic', 'Physiotherapy', 'Dance Studio', 'Other',
+]
+const CONTENT_GOALS    = ['Growth', 'Engagement', 'Leads', 'Sales', 'Brand Awareness', 'Community Building']
+const FREQUENCIES      = ['Daily', '5x per week', '3x per week', '2x per week', 'Weekly', 'Bi-weekly']
+const PACKAGES         = ['Starter', 'Growth', 'Full Service']
+const CONTRACT_TYPES   = ['Monthly Retainer', 'Project Based', 'Trial']
+const BUDGETS          = ['Under $500', '$500-$1,000', '$1,000-$3,000', '$3,000+']
+const TIMEZONES        = [
+  'GMT-8 Pacific', 'GMT-7 Mountain', 'GMT-6 Central', 'GMT-5 Eastern',
+  'GMT+0 London', 'GMT+1 Europe', 'GMT+4 Dubai', 'GMT+5 Pakistan',
+  'GMT+5:30 India', 'GMT+8 Singapore', 'GMT+10 Sydney', 'GMT+12 Auckland',
+]
+
 const EMPTY = {
   clientName: '', businessType: '', platforms: [], handles: {},
   contentGoal: '', postingFrequency: '', primaryObjective: '',
+  package: '', contractType: '', monthlyBudget: '', contractStartDate: '',
+  primaryContactName: '', primaryContactWhatsApp: '', timezone: '', websiteURL: '',
+  followers: {},
+  notes: '',
+}
+
+function Section({ title }) {
+  return (
+    <div style={{ margin: '28px 0 18px', paddingBottom: 8, borderBottom: `1.5px solid ${BD}` }}>
+      <span style={{ fontSize: 11, fontWeight: 700, color: PL, textTransform: 'uppercase', letterSpacing: '.08em', fontFamily: "'Outfit',sans-serif" }}>{title}</span>
+    </div>
+  )
+}
+
+function Field({ label, children, half }) {
+  return (
+    <div style={{ marginBottom: 18, ...(half ? { flex: '1 1 220px', minWidth: 0 } : {}) }}>
+      <label style={LBL}>{label}</label>
+      {children}
+    </div>
+  )
 }
 
 export default function ClientTab({ saveClient, onClientSaved, pushToast }) {
@@ -49,6 +87,17 @@ export default function ClientTab({ saveClient, onClientSaved, pushToast }) {
       contentGoal: form.contentGoal,
       postingFrequency: form.postingFrequency,
       primaryObjective: form.primaryObjective,
+      package: form.package,
+      contractType: form.contractType,
+      monthlyBudget: form.monthlyBudget,
+      contractStartDate: form.contractStartDate,
+      startDate: form.contractStartDate,
+      primaryContactName: form.primaryContactName,
+      primaryContactWhatsApp: form.primaryContactWhatsApp,
+      timezone: form.timezone,
+      websiteURL: form.websiteURL,
+      followers: form.followers,
+      notes: form.notes,
       profilePhoto: photo,
       brandKit: null, audit: null, competitors: null, analysis: null, strategy: null,
       createdAt: new Date().toISOString(),
@@ -60,13 +109,15 @@ export default function ClientTab({ saveClient, onClientSaved, pushToast }) {
     setTimeout(() => setSaved(false), 2500)
   }
 
+  const sel = (v) => ({ ...INP, color: v ? TX : MI })
+
   return (
-    <div style={{ maxWidth: 720 }}>
+    <div style={{ maxWidth: 760 }}>
       <div style={{ background: CARD, borderRadius: R, padding: '28px 32px', boxShadow: SH, border: `1px solid ${BD}` }}>
         <h3 style={{ margin: '0 0 24px', fontSize: 18, fontWeight: 700, color: TX, fontFamily: "'Outfit',sans-serif" }}>New Client Profile</h3>
 
-        {/* Profile photo */}
-        <div style={{ marginBottom: 24 }}>
+        {/* ── Profile Photo ── */}
+        <div style={{ marginBottom: 18 }}>
           <label style={LBL}>Profile Photo</label>
           <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
             <div style={{ width: 72, height: 72, borderRadius: '50%', background: `${PU}20`, border: `2px solid ${BD}`, flexShrink: 0, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -96,26 +147,27 @@ export default function ClientTab({ saveClient, onClientSaved, pushToast }) {
           </div>
         </div>
 
-        {/* Client name */}
-        <div style={{ marginBottom: 18 }}>
-          <label style={LBL}>Client / Business Name *</label>
+        {/* ── Client Name ── */}
+        <Field label="Client / Business Name *">
           <input value={form.clientName} onChange={e => upd('clientName', e.target.value)} placeholder="e.g. Pulse Fitness Studio" style={INP} />
-        </div>
+        </Field>
 
-        {/* Business type */}
-        <div style={{ marginBottom: 18 }}>
-          <label style={LBL}>Business Type</label>
-          <input value={form.businessType} onChange={e => upd('businessType', e.target.value)} placeholder="e.g. Fitness Studio, Restaurant, Boutique…" style={INP} />
-        </div>
+        {/* ── Business Type ── */}
+        <Field label="Business Type">
+          <select value={form.businessType} onChange={e => upd('businessType', e.target.value)} style={sel(form.businessType)}>
+            <option value="">Select business type…</option>
+            {BIZ_TYPES.map(t => <option key={t}>{t}</option>)}
+          </select>
+        </Field>
 
-        {/* Platforms */}
+        {/* ── Platforms ── */}
         <div style={{ marginBottom: 18 }}>
           <label style={LBL}>Platforms</label>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {PLATS.map(p => {
-              const sel = form.platforms.includes(p)
+              const on = form.platforms.includes(p)
               return (
-                <button key={p} onClick={() => togglePlat(p)} style={{ padding: '7px 16px', borderRadius: 20, border: `1.5px solid ${sel ? PU : BD}`, background: sel ? `${PU}15` : BG, color: sel ? PL : MI, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: "'Outfit',sans-serif" }}>
+                <button key={p} onClick={() => togglePlat(p)} style={{ padding: '7px 16px', borderRadius: 20, border: `1.5px solid ${on ? PU : BD}`, background: on ? `${PU}15` : BG, color: on ? PL : MI, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: "'Outfit',sans-serif" }}>
                   {p}
                 </button>
               )
@@ -123,14 +175,14 @@ export default function ClientTab({ saveClient, onClientSaved, pushToast }) {
           </div>
         </div>
 
-        {/* Handles per platform */}
+        {/* ── Handles ── */}
         {form.platforms.length > 0 && (
           <div style={{ marginBottom: 18 }}>
             <label style={LBL}>Social Handles</label>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {form.platforms.map(p => (
                 <div key={p} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: MI, width: 90, fontFamily: "'Outfit',sans-serif", flexShrink: 0 }}>{p}</span>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: MI, width: 100, fontFamily: "'Outfit',sans-serif", flexShrink: 0 }}>{p}</span>
                   <input value={form.handles[p] || ''} onChange={e => upd('handles', { ...form.handles, [p]: e.target.value })} placeholder={`@${p.toLowerCase()}handle`} style={{ ...INP, flex: 1 }} />
                 </div>
               ))}
@@ -138,26 +190,104 @@ export default function ClientTab({ saveClient, onClientSaved, pushToast }) {
           </div>
         )}
 
-        {/* Content goal */}
-        <div style={{ marginBottom: 18 }}>
-          <label style={LBL}>Content Goal</label>
-          <input value={form.contentGoal} onChange={e => upd('contentGoal', e.target.value)} placeholder="e.g. Grow brand awareness, increase bookings…" style={INP} />
+        {/* ── Content Goal + Posting Frequency (row) ── */}
+        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+          <Field label="Content Goal" half>
+            <select value={form.contentGoal} onChange={e => upd('contentGoal', e.target.value)} style={sel(form.contentGoal)}>
+              <option value="">Select goal…</option>
+              {CONTENT_GOALS.map(g => <option key={g}>{g}</option>)}
+            </select>
+          </Field>
+          <Field label="Posting Frequency" half>
+            <select value={form.postingFrequency} onChange={e => upd('postingFrequency', e.target.value)} style={sel(form.postingFrequency)}>
+              <option value="">Select frequency…</option>
+              {FREQUENCIES.map(f => <option key={f}>{f}</option>)}
+            </select>
+          </Field>
         </div>
 
-        {/* Posting frequency */}
-        <div style={{ marginBottom: 18 }}>
-          <label style={LBL}>Posting Frequency</label>
-          <select value={form.postingFrequency} onChange={e => upd('postingFrequency', e.target.value)} style={INP}>
-            <option value="">Select frequency…</option>
-            {['Daily', '5× per week', '3× per week', '2× per week', 'Weekly', 'Bi-weekly'].map(f => <option key={f}>{f}</option>)}
-          </select>
-        </div>
-
-        {/* Primary objective */}
-        <div style={{ marginBottom: 28 }}>
-          <label style={LBL}>Primary Objective</label>
+        {/* ── Primary Objective ── */}
+        <Field label="Primary Objective">
           <textarea value={form.primaryObjective} onChange={e => upd('primaryObjective', e.target.value)} placeholder="What is the main goal for this client's social media presence?" style={{ ...INP, resize: 'vertical', minHeight: 80 }} />
+        </Field>
+
+        {/* ── CONTRACT DETAILS ── */}
+        <Section title="Contract Details" />
+        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+          <Field label="Package" half>
+            <select value={form.package} onChange={e => upd('package', e.target.value)} style={sel(form.package)}>
+              <option value="">Select package…</option>
+              {PACKAGES.map(p => <option key={p}>{p}</option>)}
+            </select>
+          </Field>
+          <Field label="Contract Type" half>
+            <select value={form.contractType} onChange={e => upd('contractType', e.target.value)} style={sel(form.contractType)}>
+              <option value="">Select type…</option>
+              {CONTRACT_TYPES.map(t => <option key={t}>{t}</option>)}
+            </select>
+          </Field>
         </div>
+        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+          <Field label="Monthly Budget" half>
+            <select value={form.monthlyBudget} onChange={e => upd('monthlyBudget', e.target.value)} style={sel(form.monthlyBudget)}>
+              <option value="">Select budget…</option>
+              {BUDGETS.map(b => <option key={b}>{b}</option>)}
+            </select>
+          </Field>
+          <Field label="Contract Start Date" half>
+            <input type="date" value={form.contractStartDate} onChange={e => upd('contractStartDate', e.target.value)} style={INP} />
+          </Field>
+        </div>
+
+        {/* ── CONTACT DETAILS ── */}
+        <Section title="Contact Details" />
+        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+          <Field label="Primary Contact Name" half>
+            <input value={form.primaryContactName} onChange={e => upd('primaryContactName', e.target.value)} placeholder="Full name" style={INP} />
+          </Field>
+          <Field label="Primary Contact WhatsApp" half>
+            <input value={form.primaryContactWhatsApp} onChange={e => upd('primaryContactWhatsApp', e.target.value)} placeholder="+1 555 000 0000" style={INP} />
+          </Field>
+        </div>
+        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+          <Field label="Timezone" half>
+            <select value={form.timezone} onChange={e => upd('timezone', e.target.value)} style={sel(form.timezone)}>
+              <option value="">Select timezone…</option>
+              {TIMEZONES.map(z => <option key={z}>{z}</option>)}
+            </select>
+          </Field>
+          <Field label="Website URL" half>
+            <input value={form.websiteURL} onChange={e => upd('websiteURL', e.target.value)} placeholder="https://example.com" style={INP} />
+          </Field>
+        </div>
+
+        {/* ── SOCIAL BASELINE ── */}
+        {form.platforms.length > 0 && (
+          <>
+            <Section title="Social Baseline" />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {form.platforms.map(p => (
+                <div key={p} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: MI, width: 110, fontFamily: "'Outfit',sans-serif", flexShrink: 0 }}>{p}</span>
+                  <input
+                    type="number"
+                    min="0"
+                    value={form.followers[p] || ''}
+                    onChange={e => upd('followers', { ...form.followers, [p]: e.target.value })}
+                    placeholder={`Current followers on ${p}`}
+                    style={{ ...INP, flex: 1 }}
+                  />
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
+        {/* ── NOTES ── */}
+        <Section title="Notes" />
+        <Field label="Additional Notes">
+          <textarea value={form.notes} onChange={e => upd('notes', e.target.value)} placeholder="Any additional context, special instructions, or notes about this client…" style={{ ...INP, resize: 'vertical', minHeight: 100 }} />
+        </Field>
 
         <button onClick={save} style={{ padding: '12px 28px', borderRadius: 11, border: 'none', background: saved ? '#4A7C5C' : PU, color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: "'Outfit',sans-serif", boxShadow: `0 4px 16px ${PU}40`, transition: 'background .2s' }}>
           {saved ? '✓ Client Saved!' : 'Save Client'}
