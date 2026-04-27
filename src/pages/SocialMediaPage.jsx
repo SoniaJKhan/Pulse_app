@@ -1,4 +1,26 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
+
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ padding: 40, color: 'red', background: '#fff' }}>
+          <h2>Social Media section crashed</h2>
+          <pre>{this.state.error?.toString()}</pre>
+          <pre>{this.state.error?.stack}</pre>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 import { useClients } from '../hooks/useClients'
 import { useSocialData } from '../hooks/useSocialData'
 import {
@@ -63,6 +85,7 @@ export default function SocialMediaPage() {
 
   const handleClientSaved = useCallback((newClient) => {
     setSelectedId(newClient.id)
+    setTimeout(() => setActiveTab('brandkit'), 1000)
   }, [])
 
   const handleAddNew = () => {
@@ -70,6 +93,19 @@ export default function SocialMediaPage() {
     setActiveTab('client')
     setSelectedId(null)
   }
+
+  const handleDeleteClient = useCallback((c) => {
+    const displayName = c.name || c.businessName || 'Client'
+    if (!window.confirm(`Delete ${displayName}? This cannot be undone.`)) return
+    const stored = (() => { try { return JSON.parse(localStorage.getItem('pulse_clients') || '[]') } catch { return [] } })()
+    localStorage.setItem('pulse_clients', JSON.stringify(stored.filter(x => x.id !== c.id)))
+    ;['pulse_brandkit_', 'pulse_audit_', 'pulse_competitors_', 'pulse_analysis_', 'pulse_strategy_', 'pulse_calendar_'].forEach(prefix => localStorage.removeItem(prefix + c.id))
+    window.dispatchEvent(new Event('pulse_clients_updated'))
+    if (selectedId === c.id) {
+      const remaining = stored.filter(x => x.id !== c.id)
+      setSelectedId(remaining.length ? remaining[0].id : null)
+    }
+  }, [selectedId])
 
   const [analysis, setAnalysis] = useState(defAnalysis)
   useEffect(() => {
@@ -101,6 +137,7 @@ export default function SocialMediaPage() {
   const goToPublish = () => setActiveTab('publish')
 
   return (
+    <ErrorBoundary>
     <div style={{ fontFamily: "'Outfit',sans-serif", background: BG, minHeight: '100vh' }}>
       <div style={{ padding: '28px 32px 0', maxWidth: 1300 }}>
 
@@ -144,6 +181,7 @@ export default function SocialMediaPage() {
           onSelect={setSelectedId}
           onAddNew={handleAddNew}
           onProfileClick={setProfileClient}
+          onDeleteClient={handleDeleteClient}
         />
 
         {selectedId && (
@@ -163,7 +201,7 @@ export default function SocialMediaPage() {
         {!selectedId && activeTab !== 'client'
           ? <SocialWelcome />
           : <>
-              {activeTab === 'client'      && <ClientTab key={clientFormKey} saveClient={saveClient} onClientSaved={handleClientSaved} pushToast={pushToast} />}
+              {activeTab === 'client'      && <ClientTab key={clientFormKey} client={client} saveClient={saveClient} onClientSaved={handleClientSaved} pushToast={pushToast} />}
               {activeTab === 'brandkit'    && <BrandKitTab open={true} onClose={() => setActiveTab('client')} clientId={selectedId} />}
               {activeTab === 'audit'       && <AuditTab clientId={selectedId} pushToast={pushToast} />}
               {activeTab === 'competitors' && <CompetitorsTab analysis={analysis} upd={updAnalysis} pushToast={pushToast} />}
@@ -172,6 +210,7 @@ export default function SocialMediaPage() {
               {activeTab === 'create'      && <CreateTab client={client} content={content} addContent={addContent} onOpenNewPost={() => setShowNewPost(true)} onOpenIntelligence={openIntelligence} pushToast={pushToast} />}
               {activeTab === 'publish'     && <PublishTab clientId={selectedId} clients={clients} content={content} updateContent={updateContent} pushToast={pushToast} />}
               {activeTab === 'report'      && <ReportTab analysis={analysis} upd={updAnalysis} clientId={selectedId} addContent={addContent} pushToast={pushToast} onGoToCalendar={goToPublish} />}
+              <TabNavButtons tabs={TABS} activeTab={activeTab} onSelect={setActiveTab} />
             </>}
       </div>
 
@@ -188,6 +227,28 @@ export default function SocialMediaPage() {
         @keyframes tsIn { from { opacity:0; transform:translateY(8px) } to { opacity:1; transform:translateY(0) } }
         @keyframes spin  { to { transform:rotate(360deg) } }
       `}</style>
+    </div>
+    </ErrorBoundary>
+  )
+}
+
+function TabNavButtons({ tabs, activeTab, onSelect }) {
+  const idx  = tabs.findIndex(t => t.id === activeTab)
+  const prev = tabs[idx - 1]
+  const next = tabs[idx + 1]
+  if (!prev && !next) return null
+  return (
+    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 32 }}>
+      {prev && (
+        <button onClick={() => onSelect(prev.id)} style={{ padding: '9px 20px', borderRadius: 10, border: '1.5px solid #555', background: 'transparent', color: '#ccc', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Outfit',sans-serif" }}>
+          ← {prev.label}
+        </button>
+      )}
+      {next && (
+        <button onClick={() => onSelect(next.id)} style={{ padding: '9px 20px', borderRadius: 10, border: 'none', background: '#F97316', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: "'Outfit',sans-serif" }}>
+          {next.label} →
+        </button>
+      )}
     </div>
   )
 }
