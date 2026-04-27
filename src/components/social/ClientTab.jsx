@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { BG, CARD, PU, PL, MI, BD, TX, R, SH, LBL, INP, PLATS } from './socialUtils.jsx'
 
 const BIZ_TYPES = [
@@ -44,12 +44,40 @@ function Field({ label, children, half }) {
   )
 }
 
-export default function ClientTab({ saveClient, onClientSaved, pushToast }) {
+export default function ClientTab({ client, saveClient, onClientSaved, pushToast }) {
   const [form, setForm]         = useState(EMPTY)
   const [photo, setPhoto]       = useState(null)
   const [igHandle, setIgHandle] = useState('')
   const [fetching, setFetching] = useState(false)
   const [saved, setSaved]       = useState(false)
+
+  useEffect(() => {
+    if (client) {
+      setForm({
+        clientName:            client.name || client.businessName || '',
+        businessType:          client.businessType || '',
+        platforms:             client.platforms || [],
+        handles:               client.handles || {},
+        contentGoal:           client.contentGoal || '',
+        postingFrequency:      client.postingFrequency || '',
+        primaryObjective:      client.primaryObjective || '',
+        package:               client.package || '',
+        contractType:          client.contractType || '',
+        monthlyBudget:         client.monthlyBudget || '',
+        contractStartDate:     client.contractStartDate || client.startDate || '',
+        primaryContactName:    client.primaryContactName || '',
+        primaryContactWhatsApp: client.primaryContactWhatsApp || '',
+        timezone:              client.timezone || '',
+        websiteURL:            client.websiteURL || '',
+        followers:             client.followers || {},
+        notes:                 client.notes || '',
+      })
+      setPhoto(client.profilePhoto || null)
+    } else {
+      setForm(EMPTY)
+      setPhoto(null)
+    }
+  }, [client])
 
   const upd = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
@@ -77,8 +105,9 @@ export default function ClientTab({ saveClient, onClientSaved, pushToast }) {
 
   const save = () => {
     if (!form.clientName.trim()) { pushToast?.('Client name is required', 'error'); return }
-    const client = {
-      id: Date.now(),
+    const clientObj = {
+      id:           client ? client.id : Date.now(),
+      createdAt:    client ? client.createdAt : new Date().toISOString(),
       name: form.clientName.trim(),
       businessName: form.clientName.trim(),
       businessType: form.businessType,
@@ -99,11 +128,10 @@ export default function ClientTab({ saveClient, onClientSaved, pushToast }) {
       followers: form.followers,
       notes: form.notes,
       profilePhoto: photo,
-      brandKit: null, audit: null, competitors: null, analysis: null, strategy: null,
-      createdAt: new Date().toISOString(),
+      brandKit: client?.brandKit ?? null, audit: client?.audit ?? null, competitors: client?.competitors ?? null, analysis: client?.analysis ?? null, strategy: client?.strategy ?? null,
     }
-    saveClient?.(client)
-    onClientSaved?.(client)
+    saveClient?.(clientObj)
+    onClientSaved?.(clientObj)
     setSaved(true)
     pushToast?.('Client saved successfully')
     setTimeout(() => setSaved(false), 2500)
@@ -114,7 +142,7 @@ export default function ClientTab({ saveClient, onClientSaved, pushToast }) {
   return (
     <div style={{ maxWidth: 760 }}>
       <div style={{ background: CARD, borderRadius: R, padding: '28px 32px', boxShadow: SH, border: `1px solid ${BD}` }}>
-        <h3 style={{ margin: '0 0 24px', fontSize: 18, fontWeight: 700, color: TX, fontFamily: "'Outfit',sans-serif" }}>New Client Profile</h3>
+        <h3 style={{ margin: '0 0 24px', fontSize: 18, fontWeight: 700, color: TX, fontFamily: "'Outfit',sans-serif" }}>{client ? 'Edit Client Profile' : 'New Client Profile'}</h3>
 
         {/* ── Profile Photo ── */}
         <div style={{ marginBottom: 18 }}>
