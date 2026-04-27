@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { BG, CARD, MI, BD, TX, LBL, INP, SH } from './socialUtils.jsx'
+import { safeGet, safeSet } from '../../utils/storage'
 
 const PLATFORMS   = ['Instagram', 'TikTok', 'Facebook', 'LinkedIn', 'YouTube']
 const CTYPES      = ['Reel', 'Carousel', 'Static Post', 'Story', 'Video', 'Blog']
@@ -13,14 +14,8 @@ const emptyComp = () => ({ id: `c${Date.now()}${Math.random().toString(36).slice
 
 function load(clientId) {
   if (!clientId) return [emptyComp()]
-  try {
-    const raw = localStorage.getItem(`pulse_competitors_${clientId}`)
-    if (raw) {
-      const parsed = JSON.parse(raw)
-      return Array.isArray(parsed) && parsed.length ? parsed : [emptyComp()]
-    }
-  } catch {}
-  return [emptyComp()]
+  const parsed = safeGet(`pulse_competitors_${clientId}`, null)
+  return Array.isArray(parsed) && parsed.length ? parsed : [emptyComp()]
 }
 
 export default function CompetitorsTab({ clientId, pushToast, onAdvance }) {
@@ -62,7 +57,7 @@ export default function CompetitorsTab({ clientId, pushToast, onAdvance }) {
 
   const handleSave = () => {
     if (clientId) {
-      localStorage.setItem(`pulse_competitors_${clientId}`, JSON.stringify(comps))
+      safeSet(`pulse_competitors_${clientId}`, comps)
     }
     pushToast?.('Competitors saved')
     onAdvance?.()

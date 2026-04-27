@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
+import { safeGet, safeSet } from '../../utils/storage'
 
 const BG   = '#F7F5FF'
 const CARD = '#FFFFFF'
@@ -20,18 +21,13 @@ function emptyRow() {
 }
 
 function loadAudit(clientId) {
-  try {
-    const raw = localStorage.getItem(`pulse_audit_${clientId}`)
-    if (raw) {
-      const rows = JSON.parse(raw)
-      if (Array.isArray(rows) && rows.length > 0) return rows
-    }
-  } catch {}
+  const rows = safeGet(`pulse_audit_${clientId}`, null)
+  if (Array.isArray(rows) && rows.length > 0) return rows
   return [emptyRow()]
 }
 
 function saveAudit(clientId, rows) {
-  try { localStorage.setItem(`pulse_audit_${clientId}`, JSON.stringify(rows)) } catch {}
+  safeSet(`pulse_audit_${clientId}`, rows)
 }
 
 const INP = {

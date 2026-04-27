@@ -114,7 +114,24 @@ export default function Dashboard({ onViewAlerts, onGoToClient, onNavigate }) {
   const { clients } = useClients()
   const { tasks, updateTask } = useVATasks()
   const { content } = useSocialData()
-  const [showCreateMenu, setShowCreateMenu] = useState(false)
+  const [showCreateMenu,   setShowCreateMenu]   = useState(false)
+  const [showStorageDebug, setShowStorageDebug] = useState(false)
+  const [storageKeys,      setStorageKeys]      = useState([])
+
+  const checkData = () => {
+    const keys = []
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i)
+      const val = localStorage.getItem(key) || ''
+      keys.push({ key, size: val.length })
+    }
+    keys.sort((a, b) => b.size - a.size)
+    console.group('📦 Pulse localStorage')
+    keys.forEach(({ key, size }) => console.log(`${key} — ${size} chars`))
+    console.groupEnd()
+    setStorageKeys(keys)
+    setShowStorageDebug(true)
+  }
 
   const today = new Date()
   const todayStr = today.toISOString().slice(0, 10)
@@ -215,6 +232,15 @@ export default function Dashboard({ onViewAlerts, onGoToClient, onNavigate }) {
                 {unresolvedAlerts.length}
               </span>
             )}
+          </button>
+
+          {/* Check Data */}
+          <button
+            onClick={checkData}
+            style={{ padding: '9px 16px', borderRadius: 10, border: `1.5px solid ${BD}`, background: CARD, color: MI, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: FF, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 7 }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+            Check Data
           </button>
 
           {/* Create New */}
@@ -506,6 +532,35 @@ export default function Dashboard({ onViewAlerts, onGoToClient, onNavigate }) {
         @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 ${PU}50 } 50% { box-shadow: 0 0 0 5px ${PU}00 } }
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap');
       `}</style>
+
+      {/* Storage debug modal */}
+      {showStorageDebug && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.7)' }} onClick={() => setShowStorageDebug(false)}>
+          <div style={{ background: '#1A1918', borderRadius: 16, padding: '28px 28px 24px', width: 520, maxWidth: '95vw', maxHeight: '80vh', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 60px rgba(0,0,0,0.6)', border: `1px solid ${BD}` }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: TX, fontFamily: FF }}>LocalStorage Keys</h3>
+                <p style={{ margin: '3px 0 0', fontSize: 12, color: MI, fontFamily: FF }}>{storageKeys.length} keys found · also logged to console</p>
+              </div>
+              <button onClick={() => setShowStorageDebug(false)} style={{ background: 'none', border: 'none', color: MI, fontSize: 20, cursor: 'pointer', lineHeight: 1, padding: 4 }}>✕</button>
+            </div>
+            {storageKeys.length === 0
+              ? <p style={{ margin: 0, fontSize: 13, color: MI, fontFamily: FF, textAlign: 'center', padding: '24px 0' }}>No localStorage keys found.</p>
+              : (
+                <div style={{ overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {storageKeys.map(({ key, size }) => (
+                    <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.04)', border: `1px solid ${BD}` }}>
+                      <span style={{ flex: 1, fontSize: 12, fontWeight: 600, color: TX, fontFamily: FF, wordBreak: 'break-all' }}>{key}</span>
+                      <span style={{ fontSize: 11, color: MI, fontFamily: FF, flexShrink: 0, background: 'rgba(255,255,255,0.06)', padding: '2px 8px', borderRadius: 12 }}>
+                        {size > 1024 ? `${(size / 1024).toFixed(1)} KB` : `${size} B`}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { callClaude } from './socialUtils.jsx'
+import { safeGet, safeSet } from '../../utils/storage'
 
 const BG   = '#F7F5FF'
 const CARD = '#FFFFFF'
@@ -10,15 +11,9 @@ const MI   = '#6B7280'
 const BD   = '#E5E7EB'
 const FF   = "'Outfit', sans-serif"
 
-function loadAudit(clientId) {
-  try { return JSON.parse(localStorage.getItem(`pulse_audit_${clientId}`) || '[]') } catch { return [] }
-}
-function loadCompetitors(clientId) {
-  try { return JSON.parse(localStorage.getItem(`pulse_competitors_${clientId}`) || '[]') } catch { return [] }
-}
-function loadAnalysis(clientId) {
-  try { return JSON.parse(localStorage.getItem(`pulse_analysis_${clientId}`) || 'null') } catch { return null }
-}
+function loadAudit(clientId)       { return safeGet(`pulse_audit_${clientId}`, []) }
+function loadCompetitors(clientId) { return safeGet(`pulse_competitors_${clientId}`, []) }
+function loadAnalysis(clientId)    { return safeGet(`pulse_analysis_${clientId}`, null) }
 
 function ResultCard({ title, value, accent }) {
   if (!value) return null
@@ -70,7 +65,8 @@ Content Audit Data: ${JSON.stringify(filledPosts)}
 Competitor Data: ${JSON.stringify(competitors)}`
 
       const res = await callClaude([{ role: 'user', content: prompt }], 1200)
-      localStorage.setItem(`pulse_analysis_${clientId}`, JSON.stringify(res))
+      const saved = safeSet(`pulse_analysis_${clientId}`, res)
+      if (!saved) { pushToast?.('Data could not be saved. Please check your storage.', 'error'); return }
       setResult(res)
       pushToast?.('Analysis complete!')
     } catch (e) {

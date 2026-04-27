@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { callClaude } from './socialUtils.jsx'
+import { safeGet, safeSet } from '../../utils/storage'
 
 const BG   = '#F7F5FF'
 const CARD = '#FFFFFF'
@@ -10,12 +11,8 @@ const MI   = '#6B7280'
 const BD   = '#E5E7EB'
 const FF   = "'Outfit', sans-serif"
 
-function loadAnalysis(clientId) {
-  try { return JSON.parse(localStorage.getItem(`pulse_analysis_${clientId}`) || 'null') } catch { return null }
-}
-function loadStrategy(clientId) {
-  try { return JSON.parse(localStorage.getItem(`pulse_strategy_${clientId}`) || 'null') } catch { return null }
-}
+function loadAnalysis(clientId) { return safeGet(`pulse_analysis_${clientId}`, null) }
+function loadStrategy(clientId) { return safeGet(`pulse_strategy_${clientId}`, null) }
 
 function ListCard({ title, items, accent }) {
   if (!items?.length) return null
@@ -58,7 +55,8 @@ Return ONLY JSON:
 Analysis Data: ${JSON.stringify(analysis)}`
 
       const res = await callClaude([{ role: 'user', content: prompt }], 1200)
-      localStorage.setItem(`pulse_strategy_${clientId}`, JSON.stringify(res))
+      const saved = safeSet(`pulse_strategy_${clientId}`, res)
+      if (!saved) { pushToast?.('Data could not be saved. Please check your storage.', 'error'); return }
       setStrategy(res)
       pushToast?.('Strategy generated!')
     } catch (e) {

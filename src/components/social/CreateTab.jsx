@@ -6,6 +6,7 @@ import {
   callClaude, loadBrandKit, isoToday, fmtDate, offsetDate,
   PLATS, CTYPES, DAY_NAMES, getStoredPlan,
 } from './socialUtils.jsx'
+import { safeGet } from '../../utils/storage'
 
 // ── Local constants ──────────────────────────────────────────────────────────────
 const OR  = '#F97316'
@@ -48,9 +49,7 @@ function copy(text, pushToast) {
   navigator.clipboard?.writeText(text).then(() => pushToast('Copied!')).catch(() => pushToast('Copy failed', 'error'))
 }
 
-function loadStrategy(clientId) {
-  try { return JSON.parse(localStorage.getItem(`pulse_strategy_${clientId}`) || 'null') } catch { return null }
-}
+function loadStrategy(clientId) { return safeGet(`pulse_strategy_${clientId}`, null) }
 
 // ── Shared micro-components ───────────────────────────────────────────────────────
 function Lbl({ children }) {
