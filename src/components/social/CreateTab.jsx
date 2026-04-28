@@ -302,7 +302,7 @@ function HookGenerator({ clientId, pushToast }) {
     if (!topic.trim()) return
     setLoading(true)
     try {
-      const res = await callClaude([{ role: 'user', content: `Generate 10 ${hookStyle} hooks for a ${platform} post about "${topic}". Return ONLY a JSON array of strings, no other text. Example: ["hook 1", "hook 2"]` }], 700)
+      const res = await callClaude([{ role: 'user', content: `Generate 10 ${hookStyle} hooks for a ${platform} post about "${topic}".${brainCtx(clientId)} Return ONLY a JSON array of strings, no other text. Example: ["hook 1", "hook 2"]` }], 700)
       const arr = Array.isArray(res) ? res : []
       setHooks(arr.slice(0, 10))
     } catch (e) { pushToast?.(e.message === 'NO_KEY' ? 'Add API key in Settings' : e.message.slice(0, 80), 'error') }
@@ -437,7 +437,7 @@ function ContentBrief({ clientId, pushToast }) {
     if (!topic.trim()) return
     setLoading(true)
     try {
-      const res = await callClaude([{ role: 'user', content: `Create a content brief for a ${platform} ${contentType} about "${topic}". Return ONLY valid JSON: {"hookIdea": "string", "visualConcept": "string", "captionAngle": "string", "ctaSuggestion": "string", "bestTimeToPost": "string", "performancePrediction": "string"}` }], 700)
+      const res = await callClaude([{ role: 'user', content: `Create a content brief for a ${platform} ${contentType} about "${topic}".${brainCtx(clientId)} Return ONLY valid JSON: {"hookIdea": "string", "visualConcept": "string", "captionAngle": "string", "ctaSuggestion": "string", "bestTimeToPost": "string", "performancePrediction": "string"}` }], 700)
       setResult(typeof res === 'object' && res !== null ? res : null)
     } catch (e) { pushToast?.(e.message === 'NO_KEY' ? 'Add API key in Settings' : e.message.slice(0, 80), 'error') }
     setLoading(false)
@@ -606,7 +606,7 @@ function WeeklyPlanner({ clientId, addContent, pushToast }) {
     if (!slot || !hasKey) return
     setLoadingSlot(l => ({ ...l, [day]: true }))
     try {
-      const res = await callClaude([{ role: 'user', content: `Write a short caption for a ${slot.platform} ${slot.contentType}${slot.topic ? ` about "${slot.topic}"` : ''}. Return caption text only.` }], 400)
+      const res = await callClaude([{ role: 'user', content: `Write a short caption for a ${slot.platform} ${slot.contentType}${slot.topic ? ` about "${slot.topic}"` : ''}.${brainCtx(clientId)} Return caption text only.` }], 400)
       const cap = typeof res === 'string' ? res : JSON.stringify(res)
       setSlots(prev => prev.map(s => s.day === day ? { ...s, caption: cap } : s))
     } catch (e) { pushToast?.(e.message === 'NO_KEY' ? 'Add API key in Settings' : e.message.slice(0, 60), 'error') }

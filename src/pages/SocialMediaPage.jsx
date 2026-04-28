@@ -59,7 +59,7 @@ function getCompletion(clientId) {
   const analysis = (() => { try { return JSON.parse(localStorage.getItem(`pulse_analysis_${clientId}`) || '{}') } catch { return {} } })()
   const brandKit = loadBrandKit(clientId)
   return {
-    'Brand Kit':   !!(brandKit.colors?.length || brandKit.voice || brandKit.topics?.length),
+    'Brand Kit':   !!(brandKit.brandName || brandKit.brandVoice || brandKit.uniqueSellingPoint || !!localStorage.getItem(`pulse_brand_brain_${clientId}`)),
     'Audit':       !!(analysis.contentAudit?.length),
     'Competitors': !!(analysis.competitors?.length),
     'Analysis':    !!(analysis.contentResult),
@@ -99,7 +99,7 @@ export default function SocialMediaPage() {
     if (!window.confirm(`Delete ${displayName}? This cannot be undone.`)) return
     const stored = (() => { try { return JSON.parse(localStorage.getItem('pulse_clients_v2') || '[]') } catch { return [] } })()
     localStorage.setItem('pulse_clients_v2', JSON.stringify(stored.filter(x => x.id !== c.id)))
-    ;['pulse_brand_', 'pulse_brand_kit_', 'pulse_audit_', 'pulse_competitors_', 'pulse_analysis_', 'pulse_strategy_', 'pulse_calendar_'].forEach(prefix => localStorage.removeItem(prefix + c.id))
+    ;['pulse_brand_', 'pulse_brand_kit_', 'pulse_brand_brain_', 'pulse_audit_', 'pulse_competitors_', 'pulse_analysis_', 'pulse_strategy_', 'pulse_calendar_'].forEach(prefix => localStorage.removeItem(prefix + c.id))
     window.dispatchEvent(new Event('pulse_clients_updated'))
     if (selectedId === c.id) {
       const remaining = stored.filter(x => x.id !== c.id)
