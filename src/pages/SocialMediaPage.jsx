@@ -202,7 +202,7 @@ export default function SocialMediaPage() {
           ? <SocialWelcome />
           : <>
               {activeTab === 'client'      && <ClientTab key={clientFormKey} client={client} saveClient={saveClient} onClientSaved={handleClientSaved} pushToast={pushToast} />}
-              {activeTab === 'brandkit'    && <BrandKitTab clientId={selectedId} />}
+              {activeTab === 'brandkit'    && <BrandKitTab clientId={selectedId} pushToast={pushToast} />}
               {activeTab === 'audit'       && <AuditTab clientId={selectedId} pushToast={pushToast} />}
               {activeTab === 'competitors' && <CompetitorsTab clientId={selectedId} pushToast={pushToast} onAdvance={() => setActiveTab('analysis')} />}
               {activeTab === 'analysis'    && <AnalysisTab clientId={selectedId} pushToast={pushToast} onGoToStrategy={() => setActiveTab('strategy')} onGoToAudit={() => setActiveTab('audit')} onGoToCompetitors={() => setActiveTab('competitors')} />}

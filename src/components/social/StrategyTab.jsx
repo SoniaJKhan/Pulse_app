@@ -11,8 +11,21 @@ const MI   = '#6B7280'
 const BD   = '#E5E7EB'
 const FF   = "'Outfit', sans-serif"
 
-function loadAnalysis(clientId) { return safeGet(`pulse_analysis_${clientId}`, null) }
-function loadStrategy(clientId) { return safeGet(`pulse_strategy_${clientId}`, null) }
+function loadAnalysis(clientId)   { return safeGet(`pulse_analysis_${clientId}`, null) }
+function loadStrategy(clientId)   { return safeGet(`pulse_strategy_${clientId}`, null) }
+function loadBrandBrain(clientId) { return safeGet(`pulse_brand_brain_${clientId}`, null) }
+
+function brandBrainCtx(brain) {
+  if (!brain) return ''
+  const parts = []
+  if (brain.brandSummary)              parts.push(`Brand: ${brain.brandSummary}`)
+  if (brain.toneDescription)           parts.push(`Tone: ${brain.toneDescription}`)
+  if (brain.pillars?.length)           parts.push(`Pillars: ${brain.pillars.map(p => p.name).join(', ')}`)
+  if (brain.contentAngles?.length)     parts.push(`Content angles: ${brain.contentAngles.join('; ')}`)
+  if (brain.contentRules?.do?.length)  parts.push(`Content do: ${brain.contentRules.do.join('; ')}`)
+  if (brain.contentRules?.dont?.length) parts.push(`Content avoid: ${brain.contentRules.dont.join('; ')}`)
+  return parts.length ? `\n\nBrand Intelligence:\n${parts.join('\n')}` : ''
+}
 
 function ListCard({ title, items, accent }) {
   if (!items?.length) return null
@@ -27,14 +40,16 @@ function ListCard({ title, items, accent }) {
 }
 
 export default function StrategyTab({ clientId, pushToast, onGoToCreate, onGoToAnalysis }) {
-  const [analysis, setAnalysis] = useState(null)
-  const [strategy, setStrategy] = useState(null)
-  const [loading,  setLoading]  = useState(false)
-  const [hasKey,   setHasKey]   = useState(() => !!localStorage.getItem('pulse_anthropic_key'))
+  const [analysis,   setAnalysis]   = useState(null)
+  const [strategy,   setStrategy]   = useState(null)
+  const [brandBrain, setBrandBrain] = useState(null)
+  const [loading,    setLoading]    = useState(false)
+  const [hasKey,     setHasKey]     = useState(() => !!localStorage.getItem('pulse_anthropic_key'))
 
   useEffect(() => {
     setAnalysis(loadAnalysis(clientId))
     setStrategy(loadStrategy(clientId))
+    setBrandBrain(loadBrandBrain(clientId))
   }, [clientId])
 
   const runStrategy = async () => {
@@ -52,7 +67,7 @@ Return ONLY JSON:
   "weeklyFocus": "string"
 }
 
-Analysis Data: ${JSON.stringify(analysis)}`
+Analysis Data: ${JSON.stringify(analysis)}${brandBrainCtx(brandBrain)}`
 
       const res = await callClaude([{ role: 'user', content: prompt }], 1200)
       const saved = safeSet(`pulse_strategy_${clientId}`, res)

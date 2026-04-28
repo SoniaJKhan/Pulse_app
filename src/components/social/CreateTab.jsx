@@ -6,7 +6,7 @@ import {
   callClaude, loadBrandKit, isoToday, fmtDate, offsetDate,
   PLATS, CTYPES, DAY_NAMES, getStoredPlan,
 } from './socialUtils.jsx'
-import { safeGet } from '../../utils/storage'
+import { safeGet, getBrandBrain } from '../../utils/storage'
 
 // ── Local constants ──────────────────────────────────────────────────────────────
 const OR  = '#F97316'
@@ -50,6 +50,20 @@ function copy(text, pushToast) {
 }
 
 function loadStrategy(clientId) { return safeGet(`pulse_strategy_${clientId}`, null) }
+
+function brainCtx(clientId) {
+  const b = getBrandBrain(clientId)
+  if (!b) return ''
+  const parts = []
+  if (b.brandSummary)              parts.push(`Brand: ${b.brandSummary.slice(0, 200)}`)
+  if (b.toneDescription)           parts.push(`Tone: ${b.toneDescription}`)
+  if (b.pillars?.length)           parts.push(`Pillars: ${b.pillars.map(p => p.name).join(', ')}`)
+  if (b.vocabularyRules?.use?.length)   parts.push(`Use words: ${b.vocabularyRules.use.join(', ')}`)
+  if (b.vocabularyRules?.avoid?.length) parts.push(`Avoid words: ${b.vocabularyRules.avoid.join(', ')}`)
+  if (b.contentRules?.do?.length)  parts.push(`Content do: ${b.contentRules.do.join('; ')}`)
+  if (b.contentRules?.dont?.length) parts.push(`Content avoid: ${b.contentRules.dont.join('; ')}`)
+  return parts.length ? `\nBrand Intelligence: ${parts.join('. ')}` : ''
+}
 
 // ── Shared micro-components ───────────────────────────────────────────────────────
 function Lbl({ children }) {
@@ -247,7 +261,7 @@ function CaptionWriter({ clientId, pushToast }) {
     const bk = loadBrandKit(clientId)
     const voice = bk.voice || ''
     try {
-      const res = await callClaude([{ role: 'user', content: `Write a ${platform} caption about "${topic}". Length: ${length}. Style: ${style}. Brand voice: ${voice || 'engaging and authentic'}. Return caption text only, no JSON.` }], 600)
+      const res = await callClaude([{ role: 'user', content: `Write a ${platform} caption about "${topic}". Length: ${length}. Style: ${style}. Brand voice: ${voice || 'engaging and authentic'}.${brainCtx(clientId)} Return caption text only, no JSON.` }], 600)
       setResult(typeof res === 'string' ? res : JSON.stringify(res))
     } catch (e) { pushToast?.(e.message === 'NO_KEY' ? 'Add API key in Settings' : e.message.slice(0, 80), 'error') }
     setLoading(false)
@@ -703,7 +717,7 @@ export default function CreateTab({ client, content, addContent, onOpenNewPost, 
       const dir   = strat?.contentDirection?.join(', ') || ''
 
       const prompt = `Generate a social media post for ${platform} about "${topic}".
-Brand voice: ${voice}. Goal: ${goal}. Tone: ${tone}. Content direction: ${dir || 'engaging and relevant'}.
+Brand voice: ${voice}. Goal: ${goal}. Tone: ${tone}. Content direction: ${dir || 'engaging and relevant'}.${brainCtx(clientId)}
 Return ONLY valid JSON:
 {
   "caption": "string",

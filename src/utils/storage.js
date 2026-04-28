@@ -29,3 +29,9 @@ export const safeSet = (key, value) => {
     return false
   }
 }
+
+export const getBrandBrain = (clientId) =>
+  safeGet('pulse_brand_brain_' + clientId)
+
+export const getBrandKit = (clientId) =>
+  safeGet('pulse_brand_' + clientId)

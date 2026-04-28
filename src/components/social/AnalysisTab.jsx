@@ -14,6 +14,18 @@ const FF   = "'Outfit', sans-serif"
 function loadAudit(clientId)       { return safeGet(`pulse_audit_${clientId}`, []) }
 function loadCompetitors(clientId) { return safeGet(`pulse_competitors_${clientId}`, []) }
 function loadAnalysis(clientId)    { return safeGet(`pulse_analysis_${clientId}`, null) }
+function loadBrandBrain(clientId)  { return safeGet(`pulse_brand_brain_${clientId}`, null) }
+
+function brandBrainCtx(brain) {
+  if (!brain) return ''
+  const parts = []
+  if (brain.brandSummary)              parts.push(`Brand: ${brain.brandSummary}`)
+  if (brain.toneDescription)           parts.push(`Tone: ${brain.toneDescription}`)
+  if (brain.pillars?.length)           parts.push(`Pillars: ${brain.pillars.map(p => p.name).join(', ')}`)
+  if (brain.contentRules?.do?.length)  parts.push(`Content do: ${brain.contentRules.do.join('; ')}`)
+  if (brain.contentRules?.dont?.length) parts.push(`Content avoid: ${brain.contentRules.dont.join('; ')}`)
+  return parts.length ? `\n\nBrand Intelligence:\n${parts.join('\n')}` : ''
+}
 
 function ResultCard({ title, value, accent }) {
   if (!value) return null
@@ -32,6 +44,7 @@ export default function AnalysisTab({ clientId, pushToast, onGoToStrategy, onGoT
   const [audit,       setAudit]       = useState([])
   const [competitors, setCompetitors] = useState([])
   const [result,      setResult]      = useState(null)
+  const [brandBrain,  setBrandBrain]  = useState(null)
   const [loading,     setLoading]     = useState(false)
   const [hasKey,      setHasKey]      = useState(() => !!localStorage.getItem('pulse_anthropic_key'))
 
@@ -39,6 +52,7 @@ export default function AnalysisTab({ clientId, pushToast, onGoToStrategy, onGoT
     setAudit(loadAudit(clientId))
     setCompetitors(loadCompetitors(clientId))
     setResult(loadAnalysis(clientId))
+    setBrandBrain(loadBrandBrain(clientId))
   }, [clientId])
 
   const filledPosts    = audit.filter(r => r.url?.trim() || r.hook?.trim() || r.views || r.likes)
@@ -62,7 +76,7 @@ Return ONLY valid JSON in this exact shape:
 }
 
 Content Audit Data: ${JSON.stringify(filledPosts)}
-Competitor Data: ${JSON.stringify(competitors)}`
+Competitor Data: ${JSON.stringify(competitors)}${brandBrainCtx(brandBrain)}`
 
       const res = await callClaude([{ role: 'user', content: prompt }], 1200)
       const saved = safeSet(`pulse_analysis_${clientId}`, res)
